@@ -4,7 +4,12 @@ import {
   type SceneInput,
   type SceneResult,
 } from './geometry'
-import { DEFAULT_PARAMS, parseParams, serializeParams } from './state/params.ts'
+import {
+  applyViewer,
+  DEFAULT_PARAMS,
+  parseParams,
+  serializeParams,
+} from './state/params.ts'
 import { Controls } from './ui/Controls.tsx'
 import { glareStatusText } from './ui/status.ts'
 import { SectionView } from './viz/SectionView.tsx'
@@ -22,7 +27,7 @@ if (!defaultResult.ok) throw new Error('Default scene must be valid')
 const fallback: OkResult = defaultResult
 
 function bootState(): AppState {
-  const params = parseParams(window.location.search)
+  const params = applyViewer(parseParams(window.location.search))
   const result = evaluateScene(params)
   if (result.ok) return { params, result, shown: result }
   return { params, result, shown: fallback }
@@ -32,10 +37,11 @@ export default function App() {
   const [{ params, result, shown }, setState] = useState(bootState)
 
   const updateParams = (next: SceneInput): void => {
-    const nextResult = evaluateScene(next)
+    const placed = applyViewer(next)
+    const nextResult = evaluateScene(placed)
     setState((prev) => {
       if (nextResult.ok) {
-        return { params: next, result: nextResult, shown: nextResult }
+        return { params: placed, result: nextResult, shown: nextResult }
       }
       return { params: next, result: nextResult, shown: prev.shown }
     })
@@ -67,7 +73,19 @@ export default function App() {
       </header>
       <div className="layout">
         <section className="stage">
-          <SectionView scene={shown.scene} evaluation={shown.evaluation} />
+          <SectionView
+            scene={shown.scene}
+            evaluation={shown.evaluation}
+            onEyeMove={(point) =>
+              updateParams({
+                ...params,
+                viewer: {
+                  distance: Math.round(point.x),
+                  eyeHeight: Math.round(point.y),
+                },
+              })
+            }
+          />
           <p
             className={
               shown.evaluation.hasDirectGlare

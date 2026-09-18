@@ -49,6 +49,15 @@ function profilePoints(shape: ProfileShape): Point[] {
   return [0, 0.5, 1].map((t) => pointOnSurface(arc, t))
 }
 
+export function diagramViewBox(
+  bounds: DiagramModel['bounds'],
+  pad: number,
+): string {
+  const width = Math.max(bounds.maxX - bounds.minX, 1) + pad * 2
+  const height = Math.max(bounds.maxY - bounds.minY, 1) + pad * 2
+  return `${bounds.minX - pad} ${-bounds.maxY - pad} ${width} ${height}`
+}
+
 export function buildDiagram(
   scene: BuiltScene,
   evaluation: Evaluation,

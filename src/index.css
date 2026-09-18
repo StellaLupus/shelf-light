@@ -37,6 +37,7 @@ body {
 
 .stage {
   min-width: 0;
+  overflow: visible;
   background: #fffdf8;
   border: 1px solid #d9d2c4;
   border-radius: 12px;
@@ -47,6 +48,7 @@ body {
   width: 100%;
   height: auto;
   min-height: 22rem;
+  overflow: visible;
   background: #f7f4ec;
   border-radius: 8px;
 }
@@ -104,13 +106,26 @@ body {
   opacity: 0.55;
 }
 
+.eye-hit {
+  fill: transparent;
+  cursor: grab;
+  touch-action: none;
+}
+
 .eye {
   fill: #1f241c;
+  pointer-events: none;
+}
+
+.diagram.is-dragging,
+.diagram.is-dragging .eye-hit {
+  cursor: grabbing;
 }
 
 .label {
   fill: #4a5244;
   font-size: 12px;
+  pointer-events: none;
 }
 
 .status {

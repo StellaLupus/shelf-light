@@ -33,4 +33,10 @@ describe('mount controls', () => {
     expect(html).toContain('id="led-offset"')
     expect(html).not.toContain('id="led-angle"')
   })
+
+  test('still exposes viewer distance and height fields', () => {
+    const html = renderControls('downward')
+    expect(html).toContain('id="viewer-distance"')
+    expect(html).toContain('id="viewer-height"')
+  })
 })

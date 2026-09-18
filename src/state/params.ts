@@ -1,4 +1,4 @@
-import type { MountType, SceneInput } from '../geometry'
+import { evaluateScene, type MountType, type SceneInput } from '../geometry'
 
 export const DEFAULT_PARAMS: SceneInput = {
   upper: { depth: 250, thickness: 18 },
@@ -83,4 +83,15 @@ export function parseParams(search: string): SceneInput {
   const vh = readNumber(query.get('vh'))
   if (vh !== null) next.viewer.eyeHeight = vh
   return next
+}
+
+export function applyViewer(input: SceneInput): SceneInput {
+  const result = evaluateScene(input)
+  if (!result.ok) return input
+  const { x, y } = result.scene.eye
+  if (x === input.viewer.distance && y === input.viewer.eyeHeight) return input
+  return {
+    ...input,
+    viewer: { distance: x, eyeHeight: y },
+  }
 }

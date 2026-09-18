@@ -1,10 +1,18 @@
+import { useRef, useState, type PointerEvent } from 'react'
 import type { BuiltScene, Evaluation, Point, ProfileShape } from '../geometry'
 import { pointOnSurface } from '../geometry/visibility.ts'
-import { buildDiagram } from './diagram.ts'
+import {
+  EYE_HIT_RADIUS,
+  EYE_MARK_RADIUS,
+  screenToScene,
+  type SvgMatrix,
+} from './coords.ts'
+import { buildDiagram, diagramViewBox } from './diagram.ts'
 
 type SectionViewProps = {
   scene: BuiltScene
   evaluation: Evaluation
+  onEyeMove: (point: Point) => void
 }
 
 function flip(y: number): number {
@@ -69,18 +77,69 @@ function ledBody(led: ProfileShape) {
   )
 }
 
-export function SectionView({ scene, evaluation }: SectionViewProps) {
+function readCtm(svg: SVGSVGElement): SvgMatrix | null {
+  const ctm = svg.getScreenCTM()
+  if (!ctm) return null
+  return { a: ctm.a, b: ctm.b, c: ctm.c, d: ctm.d, e: ctm.e, f: ctm.f }
+}
+
+export function SectionView({ scene, evaluation, onEyeMove }: SectionViewProps) {
+  const svgRef = useRef<SVGSVGElement>(null)
+  const draggingRef = useRef(false)
+  const [dragging, setDragging] = useState(false)
+  const [frozenViewBox, setFrozenViewBox] = useState<string | null>(null)
   const diagram = buildDiagram(scene, evaluation)
-  const pad = 48
-  const width = Math.max(diagram.bounds.maxX - diagram.bounds.minX, 1) + pad * 2
-  const height = Math.max(diagram.bounds.maxY - diagram.bounds.minY, 1) + pad * 2
+  const liveViewBox = diagramViewBox(diagram.bounds, 48)
+
+  const pointFromEvent = (event: PointerEvent<SVGElement>): Point | null => {
+    const svg = svgRef.current
+    if (!svg) return null
+    const ctm = readCtm(svg)
+    if (!ctm) return null
+    return screenToScene(event.clientX, event.clientY, ctm)
+  }
+
+  const startDrag = (event: PointerEvent<SVGCircleElement>): void => {
+    event.preventDefault()
+    try {
+      svgRef.current?.setPointerCapture(event.pointerId)
+    } catch {
+      // Untrusted or already-released pointer; still start the gesture.
+    }
+    draggingRef.current = true
+    setDragging(true)
+    setFrozenViewBox(liveViewBox)
+  }
+
+  const moveDrag = (event: PointerEvent<SVGSVGElement>): void => {
+    if (!draggingRef.current) return
+    const point = pointFromEvent(event)
+    if (point) onEyeMove(point)
+  }
+
+  const endDrag = (event: PointerEvent<SVGSVGElement>): void => {
+    if (!draggingRef.current) return
+    try {
+      svgRef.current?.releasePointerCapture(event.pointerId)
+    } catch {
+      // Capture may already be gone on cancel.
+    }
+    draggingRef.current = false
+    setDragging(false)
+    setFrozenViewBox(null)
+  }
+
   return (
     <svg
-      className="diagram"
+      ref={svgRef}
+      className={dragging ? 'diagram is-dragging' : 'diagram'}
       data-testid="diagram"
-      viewBox={`${diagram.bounds.minX - pad} ${flip(diagram.bounds.maxY) - pad} ${width} ${height}`}
+      viewBox={frozenViewBox ?? liveViewBox}
       role="img"
       aria-label="Разрез полок, ленты и лучей к глазу"
+      onPointerMove={moveDrag}
+      onPointerUp={endDrag}
+      onPointerCancel={endDrag}
     >
       <line
         className="wall"
@@ -135,10 +194,22 @@ export function SectionView({ scene, evaluation }: SectionViewProps) {
       ))}
       {ledBody(diagram.led)}
       <circle
-        className="eye"
+        className="eye-hit"
+        data-testid="eye-hit"
+        role="slider"
+        aria-label="Положение глаза"
+        aria-valuetext={`${Math.round(diagram.eye.x)} мм от стены, ${Math.round(diagram.eye.y)} мм по высоте`}
         cx={diagram.eye.x}
         cy={flip(diagram.eye.y)}
-        r="8"
+        r={EYE_HIT_RADIUS}
+        onPointerDown={startDrag}
+      />
+      <circle
+        className="eye"
+        data-testid="eye"
+        cx={diagram.eye.x}
+        cy={flip(diagram.eye.y)}
+        r={EYE_MARK_RADIUS}
       />
       <text
         className="label"

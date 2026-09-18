@@ -1,8 +1,10 @@
+import { placeEye } from './placeEye.ts'
 import { buildScene } from './scene.ts'
 import type { SceneInput, SceneResult } from './types.ts'
 import { validateScene } from './validate.ts'
 import { evaluateVisibility } from './visibility.ts'
 
+export { placeEye } from './placeEye.ts'
 export { pocketCorner } from './scene.ts'
 export { INTERIOR_SAMPLE_COUNT } from './visibility.ts'
 export type {
@@ -25,6 +27,7 @@ export type {
 export function evaluateScene(input: SceneInput): SceneResult {
   const errors = validateScene(input)
   if (errors.length > 0) return { ok: false, errors }
-  const scene = buildScene(input)
+  const built = buildScene(input)
+  const scene = { ...built, eye: placeEye(built.eye, built.occluders) }
   return { ok: true, scene, evaluation: evaluateVisibility(scene) }
 }
