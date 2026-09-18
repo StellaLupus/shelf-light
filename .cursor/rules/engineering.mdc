@@ -1,0 +1,14 @@
+---
+description: TDD, stack, and commit discipline for the shelf visualizer
+alwaysApply: true
+---
+
+# Engineering
+
+- TDD: write the failing Vitest first, then the code, then run `npm test`.
+- Comments in English. UI copy and OpenSpec artifacts in Russian.
+- Geometry stays in pure functions (`src/geometry/`). React components do not compute glare.
+- v1 is a static SPA: no backend, database, accounts, or secrets.
+- LED strip is an extended source (width > 0), never a single point.
+- Commit only when the user explicitly asks. Never add Cursor attribution trailers.
+- Push only after tests pass, and only when the user asks.

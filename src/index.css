@@ -1,0 +1,189 @@
+:root {
+  color: #1f241c;
+  background: #f3efe6;
+  font: 16px/1.45 system-ui, 'Segoe UI', Roboto, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+.page {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 3rem;
+}
+
+.header h1 {
+  margin: 0 0 0.5rem;
+  font-size: 1.7rem;
+}
+
+.lead {
+  margin: 0 0 1.25rem;
+  color: #4a5244;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 22rem);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.stage {
+  min-width: 0;
+  background: #fffdf8;
+  border: 1px solid #d9d2c4;
+  border-radius: 12px;
+  padding: 0.75rem;
+}
+
+.diagram {
+  width: 100%;
+  height: auto;
+  min-height: 22rem;
+  background: #f7f4ec;
+  border-radius: 8px;
+}
+
+.wall {
+  stroke: #2c2c2c;
+  stroke-width: 8;
+}
+
+.shelf,
+.valance {
+  fill: #d8c49a;
+  stroke: #8a7344;
+  stroke-width: 1.5;
+}
+
+.valance {
+  fill: #c4b089;
+}
+
+.led-strip {
+  stroke: #3fbf4a;
+  stroke-linecap: round;
+  stroke-width: 8px;
+  vector-effect: non-scaling-stroke;
+}
+
+.ray-open,
+.ray-blocked {
+  vector-effect: non-scaling-stroke;
+}
+
+.plant-fan {
+  stroke: #f0d56a;
+  stroke-width: 2;
+  opacity: 0.7;
+}
+
+.ray-open {
+  stroke: #c23b3b;
+  stroke-width: 1.4;
+  opacity: 0.85;
+}
+
+.ray-blocked {
+  stroke: #2f8f4e;
+  stroke-width: 1.2;
+  opacity: 0.55;
+}
+
+.eye {
+  fill: #1f241c;
+}
+
+.label {
+  fill: #4a5244;
+  font-size: 12px;
+}
+
+.status {
+  margin: 0.75rem 0 0;
+  font-weight: 650;
+}
+
+.status-alert {
+  color: #9d1f1f;
+}
+
+.status-ok {
+  color: #1f6a38;
+}
+
+.errors {
+  margin: 0.5rem 0 0;
+  padding-left: 1.2rem;
+  color: #9d1f1f;
+}
+
+.controls {
+  display: grid;
+  gap: 0.7rem;
+  background: #fffdf8;
+  border: 1px solid #d9d2c4;
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+fieldset {
+  border: 1px solid #d9d2c4;
+  border-radius: 8px;
+  margin: 0;
+  padding: 0.5rem 0.75rem 0.75rem;
+}
+
+legend {
+  padding: 0 0.3rem;
+  font-weight: 650;
+}
+
+.choice {
+  display: inline-flex;
+  gap: 0.35rem;
+  margin-right: 1rem;
+}
+
+.field {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.field-label {
+  font-size: 0.92rem;
+}
+
+.field-controls {
+  display: grid;
+  grid-template-columns: 1fr 4.6rem auto;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.field input[type='range'] {
+  width: 100%;
+}
+
+.field input[type='number'] {
+  width: 100%;
+  padding: 0.25rem 0.35rem;
+}
+
+.field-unit {
+  color: #4a5244;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 800px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}

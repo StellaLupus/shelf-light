@@ -1,0 +1,15 @@
+---
+description: Shelf invariants — pointer to OpenSpec SoT, not a second copy.
+alwaysApply: true
+---
+
+# shelf invariants
+
+Source of truth is versioned in this repo:
+
+- Planning slice: `openspec/config.yaml`
+- Details and invariants: `openspec/project.md`
+
+Read `openspec/project.md` before planning or editing product code.
+
+This file is a Cursor-only pointer. Do not add invariants here.

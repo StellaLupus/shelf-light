@@ -1,0 +1,14 @@
+---
+description: Visualizer UI — sliders, SVG section, URL state
+globs: src/**/*.{ts,tsx,css}
+alwaysApply: false
+---
+
+# Web UI
+
+- Side-view SVG is the primary diagram: shelves, valance, LED as a strip, eye, glare rays.
+- Red ray = unobstructed path to the eye. Green ray = occluded. Status text must match the geometry result.
+- Every numeric parameter has a slider and an input; they stay in sync.
+- Persist the full calculator state in the URL query string so a link reproduces the scene.
+- Desktop: diagram and controls side by side. Narrow viewports: diagram above controls.
+- Validate physically impossible layouts in the UI (LED past the front edge, non-positive gap) without crashing the renderer.
