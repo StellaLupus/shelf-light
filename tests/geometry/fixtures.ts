@@ -9,7 +9,6 @@ const defaults: SceneInput = {
     width: 10,
     mount: 'downward',
     profileDrop: 2,
-    emitAngle: 45,
     offsetFromWall: 40,
   },
   viewer: { distance: 500, eyeHeight: 120 },

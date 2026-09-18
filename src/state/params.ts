@@ -1,4 +1,4 @@
-import type { SceneInput } from '../geometry'
+import type { MountType, SceneInput } from '../geometry'
 
 export const DEFAULT_PARAMS: SceneInput = {
   upper: { depth: 250, thickness: 18 },
@@ -9,7 +9,6 @@ export const DEFAULT_PARAMS: SceneInput = {
     width: 10,
     mount: 'downward',
     profileDrop: 2,
-    emitAngle: 45,
     offsetFromWall: 40,
   },
   viewer: { distance: 600, eyeHeight: 180 },
@@ -19,6 +18,19 @@ function readNumber(value: string | null): number | null {
   if (value === null || value === '') return null
   const parsed = Number(value)
   return Number.isFinite(parsed) ? parsed : null
+}
+
+function readMount(value: string | null): MountType | null {
+  if (value === 'corner') return 'triangle'
+  if (
+    value === 'downward' ||
+    value === 'radius' ||
+    value === 'ell' ||
+    value === 'triangle'
+  ) {
+    return value
+  }
+  return null
 }
 
 export function serializeParams(input: SceneInput): URLSearchParams {
@@ -33,7 +45,6 @@ export function serializeParams(input: SceneInput): URLSearchParams {
   params.set('bt', String(input.blend.thickness))
   params.set('lw', String(input.led.width))
   params.set('lpd', String(input.led.profileDrop))
-  params.set('lea', String(input.led.emitAngle))
   params.set('lo', String(input.led.offsetFromWall))
   params.set('vd', String(input.viewer.distance))
   params.set('vh', String(input.viewer.eyeHeight))
@@ -45,10 +56,8 @@ export function parseParams(search: string): SceneInput {
     search.startsWith('?') ? search.slice(1) : search,
   )
   const next = structuredClone(DEFAULT_PARAMS)
-  const mount = query.get('mount')
-  if (mount === 'corner' || mount === 'downward') {
-    next.led.mount = mount
-  }
+  const mount = readMount(query.get('mount'))
+  if (mount !== null) next.led.mount = mount
   const ud = readNumber(query.get('ud'))
   if (ud !== null) next.upper.depth = ud
   const ut = readNumber(query.get('ut'))
@@ -67,8 +76,6 @@ export function parseParams(search: string): SceneInput {
   if (lw !== null) next.led.width = lw
   const lpd = readNumber(query.get('lpd'))
   if (lpd !== null) next.led.profileDrop = lpd
-  const lea = readNumber(query.get('lea'))
-  if (lea !== null) next.led.emitAngle = lea
   const lo = readNumber(query.get('lo'))
   if (lo !== null) next.led.offsetFromWall = lo
   const vd = readNumber(query.get('vd'))

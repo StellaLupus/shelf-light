@@ -74,6 +74,13 @@ body {
   vector-effect: non-scaling-stroke;
 }
 
+.led-body {
+  fill: #3fbf4a;
+  stroke: #1f7a28;
+  stroke-width: 1;
+  opacity: 0.9;
+}
+
 .ray-open,
 .ray-blocked {
   vector-effect: non-scaling-stroke;
@@ -149,7 +156,7 @@ legend {
 .choice {
   display: inline-flex;
   gap: 0.35rem;
-  margin-right: 1rem;
+  margin-right: 0.85rem;
 }
 
 .field {

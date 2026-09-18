@@ -2,18 +2,19 @@ import type {
   BuiltScene,
   Evaluation,
   Point,
+  ProfileShape,
   RaySample,
   Rect,
   Segment,
 } from '../geometry'
-import { lerp } from '../geometry/visibility.ts'
+import { pointOnSurface } from '../geometry/visibility.ts'
 
 export type DiagramModel = {
   wall: Segment
   upper: Rect
   lower: Rect
   valance: Rect
-  led: Segment
+  led: ProfileShape
   eye: Point
   rays: RaySample[]
   plantFan: Segment[]
@@ -40,14 +41,25 @@ function rectPoints(rect: Rect): Point[] {
   ]
 }
 
+function profilePoints(shape: ProfileShape): Point[] {
+  if (shape.kind === 'strip') return [shape.a, shape.b]
+  if (shape.kind === 'square') return rectPoints(shape.rect)
+  if (shape.kind === 'triangle') return [shape.a, shape.b, shape.c]
+  const arc = { ...shape, kind: 'arc' as const }
+  return [0, 0.5, 1].map((t) => pointOnSurface(arc, t))
+}
+
 export function buildDiagram(
   scene: BuiltScene,
   evaluation: Evaluation,
 ): DiagramModel {
-  const plantFan: Segment[] = [0.2, 0.5, 0.8].map((t) => {
-    const from = lerp(scene.emitter.a, scene.emitter.b, t)
-    return { a: from, b: { x: from.x + (t - 0.5) * 30, y: 0 } }
-  })
+  const fanSurface = scene.emitSurfaces[0]
+  const plantFan: Segment[] = fanSurface
+    ? [0.2, 0.5, 0.8].map((t) => {
+        const from = pointOnSurface(fanSurface, t)
+        return { a: from, b: { x: from.x + (t - 0.5) * 30, y: 0 } }
+      })
+    : []
   const wall: Segment = {
     a: { x: 0, y: Math.min(scene.lower.y, scene.eye.y) - 40 },
     b: {
@@ -59,8 +71,7 @@ export function buildDiagram(
     wall.a,
     wall.b,
     scene.eye,
-    scene.emitter.a,
-    scene.emitter.b,
+    ...profilePoints(scene.profileShape),
     ...rectPoints(scene.upper),
     ...rectPoints(scene.lower),
     ...rectPoints(scene.valance),
@@ -71,7 +82,7 @@ export function buildDiagram(
     upper: scene.upper,
     lower: scene.lower,
     valance: scene.valance,
-    led: scene.emitter,
+    led: scene.profileShape,
     eye: scene.eye,
     rays: evaluation.samples,
     plantFan,

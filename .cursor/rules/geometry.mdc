@@ -7,8 +7,8 @@ alwaysApply: false
 # Geometry
 
 - Coordinates: origin at wall × top of lower shelf; +X into the room; +Y up; millimeters.
-- Model the LED as a segment (or thin rectangle) of `led.width`. Sample ends plus ≥16 interior points.
-- Mount types are distinct: `corner` (angled emit at the wall/shelf corner) and `downward` (horizontal emit under the upper shelf).
-- Occluders are solid bodies: upper shelf, lower shelf, valance (бленда). Edge graze counts as blocked.
-- Direct glare exists if any emit-point → eye segment is unobstructed and in the emitter's front half-plane.
+- Model the LED as one or more emit surfaces of `led.width` (W). Sample ends plus ≥16 interior points on every segment or arc.
+- Mount types are distinct: `downward` (horizontal window under the upper shelf) and valance-flush `radius` / `ell` / `triangle`.
+- Occluders are solid bodies: upper shelf, lower shelf, valance (бленда), and the opaque `ell` body. Edge graze counts as blocked.
+- Direct glare exists if any emit-point → eye segment is unobstructed and in that surface's front half-plane.
 - Do not replace the segment test with a single worst-case point. The inner edge can glare when looking up under the shelf.

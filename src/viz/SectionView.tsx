@@ -1,4 +1,5 @@
-import type { BuiltScene, Evaluation } from '../geometry'
+import type { BuiltScene, Evaluation, Point, ProfileShape } from '../geometry'
+import { pointOnSurface } from '../geometry/visibility.ts'
 import { buildDiagram } from './diagram.ts'
 
 type SectionViewProps = {
@@ -6,12 +7,73 @@ type SectionViewProps = {
   evaluation: Evaluation
 }
 
+function flip(y: number): number {
+  return -y
+}
+
+function pointsAttr(points: Point[]): string {
+  return points.map((point) => `${point.x},${flip(point.y)}`).join(' ')
+}
+
+function ledBody(led: ProfileShape) {
+  if (led.kind === 'strip') {
+    return (
+      <line
+        className="led-strip"
+        data-testid="led-strip"
+        data-kind="downward"
+        x1={led.a.x}
+        y1={flip(led.a.y)}
+        x2={led.b.x}
+        y2={flip(led.b.y)}
+      />
+    )
+  }
+  if (led.kind === 'square') {
+    return (
+      <rect
+        className="led-body"
+        data-testid="led-body"
+        data-kind="ell"
+        x={led.rect.x}
+        y={flip(led.rect.y + led.rect.height)}
+        width={led.rect.width}
+        height={led.rect.height}
+      />
+    )
+  }
+  if (led.kind === 'triangle') {
+    return (
+      <polygon
+        className="led-body"
+        data-testid="led-body"
+        data-kind="triangle"
+        points={pointsAttr([led.a, led.b, led.c])}
+      />
+    )
+  }
+  if (led.kind !== 'quarterCircle') {
+    const _never: never = led
+    throw new Error(`Unsupported LED body: ${JSON.stringify(_never)}`)
+  }
+  const arc = { ...led, kind: 'arc' as const }
+  const start = pointOnSurface(arc, 0)
+  const end = pointOnSurface(arc, 1)
+  return (
+    <path
+      className="led-body"
+      data-testid="led-body"
+      data-kind="radius"
+      d={`M ${led.center.x} ${flip(led.center.y)} L ${start.x} ${flip(start.y)} A ${led.radius} ${led.radius} 0 0 1 ${end.x} ${flip(end.y)} Z`}
+    />
+  )
+}
+
 export function SectionView({ scene, evaluation }: SectionViewProps) {
   const diagram = buildDiagram(scene, evaluation)
   const pad = 48
   const width = Math.max(diagram.bounds.maxX - diagram.bounds.minX, 1) + pad * 2
   const height = Math.max(diagram.bounds.maxY - diagram.bounds.minY, 1) + pad * 2
-  const flip = (y: number): number => -y
   return (
     <svg
       className="diagram"
@@ -71,14 +133,7 @@ export function SectionView({ scene, evaluation }: SectionViewProps) {
           y2={flip(ray.to.y)}
         />
       ))}
-      <line
-        className="led-strip"
-        data-testid="led-strip"
-        x1={diagram.led.a.x}
-        y1={flip(diagram.led.a.y)}
-        x2={diagram.led.b.x}
-        y2={flip(diagram.led.b.y)}
-      />
+      {ledBody(diagram.led)}
       <circle
         className="eye"
         cx={diagram.eye.x}

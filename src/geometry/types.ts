@@ -15,7 +15,36 @@ export type Rect = {
   height: number
 }
 
-export type MountType = 'corner' | 'downward'
+export type MountType = 'downward' | 'radius' | 'ell' | 'triangle'
+
+export type EmitSegment = {
+  kind: 'segment'
+  a: Point
+  b: Point
+  normal: Point
+}
+
+export type EmitArc = {
+  kind: 'arc'
+  center: Point
+  radius: number
+  startAngle: number
+  endAngle: number
+}
+
+export type EmitSurface = EmitSegment | EmitArc
+
+export type ProfileShape =
+  | { kind: 'strip'; a: Point; b: Point }
+  | { kind: 'square'; rect: Rect }
+  | { kind: 'triangle'; a: Point; b: Point; c: Point }
+  | {
+      kind: 'quarterCircle'
+      center: Point
+      radius: number
+      startAngle: number
+      endAngle: number
+    }
 
 export type SceneInput = {
   upper: { depth: number; thickness: number }
@@ -26,7 +55,6 @@ export type SceneInput = {
     width: number
     mount: MountType
     profileDrop: number
-    emitAngle: number
     offsetFromWall: number
   }
   viewer: { distance: number; eyeHeight: number }
@@ -38,8 +66,9 @@ export type ValidationError = {
 }
 
 export type BuiltScene = {
-  emitter: Segment
-  emitNormal: Point
+  emitSurfaces: EmitSurface[]
+  profileShape: ProfileShape
+  profileBody?: Rect
   upper: Rect
   lower: Rect
   valance: Rect

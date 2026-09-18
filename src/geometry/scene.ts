@@ -1,4 +1,18 @@
-import type { BuiltScene, Point, Rect, SceneInput, Segment } from './types.ts'
+import type {
+  BuiltScene,
+  EmitSurface,
+  Point,
+  ProfileShape,
+  Rect,
+  SceneInput,
+} from './types.ts'
+
+export function pocketCorner(input: SceneInput): Point {
+  return {
+    x: input.upper.depth - input.blend.thickness,
+    y: input.gap - input.led.profileDrop,
+  }
+}
 
 function normalize(point: Point): Point {
   const length = Math.hypot(point.x, point.y)
@@ -6,30 +20,97 @@ function normalize(point: Point): Point {
   return { x: point.x / length, y: point.y / length }
 }
 
-function buildEmitter(input: SceneInput): Segment {
+function buildProfile(input: SceneInput): {
+  emitSurfaces: EmitSurface[]
+  profileShape: ProfileShape
+  profileBody?: Rect
+} {
+  const width = input.led.width
   const y = input.gap - input.led.profileDrop
   if (input.led.mount === 'downward') {
+    const a = { x: input.led.offsetFromWall, y }
+    const b = { x: input.led.offsetFromWall + width, y }
     return {
-      a: { x: input.led.offsetFromWall, y },
-      b: { x: input.led.offsetFromWall + input.led.width, y },
+      emitSurfaces: [{ kind: 'segment', a, b, normal: { x: 0, y: -1 } }],
+      profileShape: { kind: 'strip', a, b },
     }
   }
-  const radians = (input.led.emitAngle * Math.PI) / 180
+
+  const pocket = pocketCorner(input)
+  const alongShelf = { x: pocket.x - width, y: pocket.y }
+  const alongValance = { x: pocket.x, y: pocket.y - width }
+  const inner = { x: pocket.x - width, y: pocket.y - width }
+
+  if (input.led.mount === 'triangle') {
+    return {
+      emitSurfaces: [
+        {
+          kind: 'segment',
+          a: alongShelf,
+          b: alongValance,
+          normal: normalize({ x: -1, y: -1 }),
+        },
+      ],
+      profileShape: { kind: 'triangle', a: pocket, b: alongShelf, c: alongValance },
+    }
+  }
+
+  if (input.led.mount === 'ell') {
+    const profileBody: Rect = {
+      x: inner.x,
+      y: inner.y,
+      width,
+      height: width,
+    }
+    return {
+      emitSurfaces: [
+        {
+          kind: 'segment',
+          a: alongShelf,
+          b: inner,
+          normal: { x: -1, y: 0 },
+        },
+        {
+          kind: 'segment',
+          a: inner,
+          b: alongValance,
+          normal: { x: 0, y: -1 },
+        },
+      ],
+      profileBody,
+      profileShape: { kind: 'square', rect: profileBody },
+    }
+  }
+
+  if (input.led.mount !== 'radius') {
+    const _never: never = input.led.mount
+    throw new Error(`Unsupported mount: ${_never}`)
+  }
+
+  const startAngle = Math.PI
+  const endAngle = (3 * Math.PI) / 2
   return {
-    a: { x: 0, y },
-    b: {
-      x: input.led.width * Math.cos(radians),
-      y: y - input.led.width * Math.sin(radians),
+    emitSurfaces: [
+      {
+        kind: 'arc',
+        center: pocket,
+        radius: width,
+        startAngle,
+        endAngle,
+      },
+    ],
+    profileShape: {
+      kind: 'quarterCircle',
+      center: pocket,
+      radius: width,
+      startAngle,
+      endAngle,
     },
   }
 }
 
 export function buildScene(input: SceneInput): BuiltScene {
-  const emitter = buildEmitter(input)
-  const direction = normalize({
-    x: emitter.b.x - emitter.a.x,
-    y: emitter.b.y - emitter.a.y,
-  })
+  const { emitSurfaces, profileShape, profileBody } = buildProfile(input)
   const upper: Rect = {
     x: 0,
     y: input.gap,
@@ -48,17 +129,16 @@ export function buildScene(input: SceneInput): BuiltScene {
     width: input.blend.thickness,
     height: input.blend.height,
   }
+  const solids = [upper, lower, valance]
+  if (profileBody) solids.push(profileBody)
   return {
-    emitter,
-    // Corner slit faces into the room and down along the emit segment.
-    emitNormal:
-      input.led.mount === 'downward' ? { x: 0, y: -1 } : direction,
+    emitSurfaces,
+    profileShape,
+    profileBody,
     upper,
     lower,
     valance,
-    occluders: [upper, lower, valance].filter(
-      (rect) => rect.width > 0 && rect.height > 0,
-    ),
+    occluders: solids.filter((rect) => rect.width > 0 && rect.height > 0),
     eye: { x: input.viewer.distance, y: input.viewer.eyeHeight },
   }
 }

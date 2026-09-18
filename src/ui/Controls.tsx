@@ -27,13 +27,37 @@ export function Controls({ params, onChange }: ControlsProps) {
           <input
             type="radio"
             name="mount"
-            value="corner"
-            checked={params.led.mount === 'corner'}
+            value="radius"
+            checked={params.led.mount === 'radius'}
             onChange={() =>
-              onChange({ ...params, led: { ...params.led, mount: 'corner' } })
+              onChange({ ...params, led: { ...params.led, mount: 'radius' } })
             }
           />
-          Угловой
+          Радиусный
+        </label>
+        <label className="choice">
+          <input
+            type="radio"
+            name="mount"
+            value="ell"
+            checked={params.led.mount === 'ell'}
+            onChange={() =>
+              onChange({ ...params, led: { ...params.led, mount: 'ell' } })
+            }
+          />
+          Г-образный
+        </label>
+        <label className="choice">
+          <input
+            type="radio"
+            name="mount"
+            value="triangle"
+            checked={params.led.mount === 'triangle'}
+            onChange={() =>
+              onChange({ ...params, led: { ...params.led, mount: 'triangle' } })
+            }
+          />
+          Треугольный
         </label>
       </fieldset>
 
@@ -131,18 +155,20 @@ export function Controls({ params, onChange }: ControlsProps) {
           onChange({ ...params, led: { ...params.led, width } })
         }
       />
-      <NumberField
-        id="led-offset"
-        label="Смещение ленты от стены"
-        value={params.led.offsetFromWall}
-        min={0}
-        max={500}
-        step={1}
-        unit="мм"
-        onChange={(offsetFromWall) =>
-          onChange({ ...params, led: { ...params.led, offsetFromWall } })
-        }
-      />
+      {params.led.mount === 'downward' ? (
+        <NumberField
+          id="led-offset"
+          label="Смещение ленты от стены"
+          value={params.led.offsetFromWall}
+          min={0}
+          max={500}
+          step={1}
+          unit="мм"
+          onChange={(offsetFromWall) =>
+            onChange({ ...params, led: { ...params.led, offsetFromWall } })
+          }
+        />
+      ) : null}
       <NumberField
         id="led-drop"
         label="Свес профиля"
@@ -153,18 +179,6 @@ export function Controls({ params, onChange }: ControlsProps) {
         unit="мм"
         onChange={(profileDrop) =>
           onChange({ ...params, led: { ...params.led, profileDrop } })
-        }
-      />
-      <NumberField
-        id="led-angle"
-        label="Угол излучения (угловой)"
-        value={params.led.emitAngle}
-        min={15}
-        max={75}
-        step={1}
-        unit="°"
-        onChange={(emitAngle) =>
-          onChange({ ...params, led: { ...params.led, emitAngle } })
         }
       />
       <NumberField

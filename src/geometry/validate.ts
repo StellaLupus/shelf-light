@@ -12,7 +12,6 @@ export function validateScene(input: SceneInput): ValidationError[] {
     input.blend.thickness,
     input.led.width,
     input.led.profileDrop,
-    input.led.emitAngle,
     input.led.offsetFromWall,
     input.viewer.distance,
     input.viewer.eyeHeight,
@@ -54,6 +53,15 @@ export function validateScene(input: SceneInput): ValidationError[] {
     errors.push({
       code: 'led.overhang',
       message: 'Лента выходит за переднюю кромку верхней полки',
+    })
+  }
+  if (
+    input.led.mount !== 'downward' &&
+    input.led.width + input.blend.thickness > input.upper.depth
+  ) {
+    errors.push({
+      code: 'led.overhang',
+      message: 'Профиль не помещается между блендой и стеной',
     })
   }
   return errors
