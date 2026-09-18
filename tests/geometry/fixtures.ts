@@ -2,7 +2,7 @@ import type { SceneInput } from '../../src/geometry'
 
 const defaults: SceneInput = {
   upper: { depth: 250, thickness: 18 },
-  lower: { depth: 200, thickness: 18 },
+  lower: { depth: 200, thickness: 18, heightFromFloor: 1200 },
   gap: 300,
   blend: { height: 0, thickness: 10 },
   led: {

@@ -53,9 +53,49 @@ body {
   border-radius: 8px;
 }
 
+.view-toggle,
+.presets {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.view-toggle {
+  margin-bottom: 0.6rem;
+}
+
+.presets {
+  flex-wrap: wrap;
+}
+
+.view-toggle button,
+.presets button {
+  border: 1px solid #d9d2c4;
+  background: #fffdf8;
+  border-radius: 8px;
+  padding: 0.3rem 0.7rem;
+  cursor: pointer;
+}
+
+.view-toggle button[aria-pressed='true'] {
+  background: #e8f0d8;
+  border-color: #8aa05a;
+  font-weight: 650;
+}
+
 .wall {
   stroke: #2c2c2c;
   stroke-width: 8;
+}
+
+.floor {
+  stroke: #6b5a3a;
+  stroke-width: 6;
+}
+
+.lit-region {
+  fill: #f0d56a;
+  fill-opacity: 0.22;
+  stroke: none;
 }
 
 .shelf,
@@ -200,6 +240,12 @@ legend {
 }
 
 .field-unit {
+  color: #4a5244;
+  font-size: 0.85rem;
+}
+
+.hint {
+  margin: 0;
   color: #4a5244;
   font-size: 0.85rem;
 }

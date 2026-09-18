@@ -48,7 +48,7 @@ export type ProfileShape =
 
 export type SceneInput = {
   upper: { depth: number; thickness: number }
-  lower: { depth: number; thickness: number }
+  lower: { depth: number; thickness: number; heightFromFloor: number }
   gap: number
   blend: { height: number; thickness: number }
   led: {
@@ -73,6 +73,7 @@ export type BuiltScene = {
   lower: Rect
   valance: Rect
   occluders: Rect[]
+  floorY: number
   eye: Point
 }
 
@@ -85,6 +86,14 @@ export type RaySample = {
 export type Evaluation = {
   hasDirectGlare: boolean
   samples: RaySample[]
+  litRegion: Point[][]
+}
+
+export type RoomBounds = {
+  minX: number
+  maxX: number
+  minY: number
+  maxY: number
 }
 
 export type SceneResult =

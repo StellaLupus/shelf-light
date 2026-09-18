@@ -63,6 +63,46 @@ describe('side-view diagram model', () => {
     expect(diagram.led.center.x).toBeCloseTo(pocketCorner(input).x)
   })
 
+  test('floor sits at -H and the wall reaches it', () => {
+    const input = baseInput({
+      lower: { depth: 200, thickness: 18, heightFromFloor: 1200 },
+    })
+    const result = evaluateScene(input)
+    expectOk(result)
+    const diagram = buildDiagram(result.scene, result.evaluation)
+    expect(diagram.floor.a.y).toBe(-1200)
+    expect(diagram.floor.b.y).toBe(-1200)
+    expect(Math.min(diagram.wall.a.y, diagram.wall.b.y)).toBe(-1200)
+    expect(diagram.led.kind).toBe('strip')
+    if (diagram.led.kind !== 'strip') return
+    expect(
+      Math.hypot(
+        diagram.led.b.x - diagram.led.a.x,
+        diagram.led.b.y - diagram.led.a.y,
+      ),
+    ).toBeGreaterThan(1)
+  })
+
+  test('view stays on the shelves and the eye, not the far room clip', () => {
+    const input = baseInput({
+      lower: { depth: 80, thickness: 18, heightFromFloor: 1200 },
+      viewer: { distance: 600, eyeHeight: 180 },
+    })
+    const result = evaluateScene(input)
+    expectOk(result)
+    const diagram = buildDiagram(result.scene, result.evaluation)
+    const frameX = Math.max(
+      result.scene.lower.width,
+      result.scene.upper.width,
+      result.scene.eye.x,
+    )
+    expect(diagram.floor.b.x).toBeGreaterThanOrEqual(frameX)
+    expect(diagram.bounds.maxX).toBeGreaterThanOrEqual(frameX)
+    expect(diagram.bounds.maxX).toBeLessThan(2500)
+    expect(diagram.bounds.minY).toBeLessThanOrEqual(-1200)
+    expect(diagram.litRegion.length).toBeGreaterThan(0)
+  })
+
   test('ray occlusion flags match the engine boolean', () => {
     const result = evaluateScene(DEFAULT_PARAMS)
     expectOk(result)

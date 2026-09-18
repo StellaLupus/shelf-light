@@ -1,8 +1,18 @@
-import { evaluateScene, type MountType, type SceneInput } from '../geometry'
+import { placeEye, type MountType, type SceneInput } from '../geometry'
+import { buildScene } from '../geometry/scene.ts'
+import { validateScene } from '../geometry/validate.ts'
+
+export type ViewMode = 'glare' | 'lit'
+
+export const EYE_PRESETS = {
+  standing: 1600,
+  sitting: 1200,
+  lying: 600,
+} as const
 
 export const DEFAULT_PARAMS: SceneInput = {
   upper: { depth: 250, thickness: 18 },
-  lower: { depth: 280, thickness: 18 },
+  lower: { depth: 280, thickness: 18, heightFromFloor: 1200 },
   gap: 350,
   blend: { height: 40, thickness: 12 },
   led: {
@@ -40,6 +50,7 @@ export function serializeParams(input: SceneInput): URLSearchParams {
   params.set('ut', String(input.upper.thickness))
   params.set('ld', String(input.lower.depth))
   params.set('lt', String(input.lower.thickness))
+  params.set('lh', String(input.lower.heightFromFloor))
   params.set('gap', String(input.gap))
   params.set('bh', String(input.blend.height))
   params.set('bt', String(input.blend.thickness))
@@ -51,10 +62,40 @@ export function serializeParams(input: SceneInput): URLSearchParams {
   return params
 }
 
+export function serializeState(
+  input: SceneInput,
+  view: ViewMode = 'glare',
+): URLSearchParams {
+  const params = serializeParams(input)
+  params.set('view', view)
+  return params
+}
+
+function queryFromSearch(search: string): URLSearchParams {
+  return new URLSearchParams(search.startsWith('?') ? search.slice(1) : search)
+}
+
+function viewFromQuery(query: URLSearchParams): ViewMode {
+  return query.get('view') === 'lit' ? 'lit' : 'glare'
+}
+
+export function parseView(search: string): ViewMode {
+  return viewFromQuery(queryFromSearch(search))
+}
+
+export function parseState(search: string): {
+  params: SceneInput
+  view: ViewMode
+} {
+  const query = queryFromSearch(search)
+  return { params: paramsFromQuery(query), view: viewFromQuery(query) }
+}
+
 export function parseParams(search: string): SceneInput {
-  const query = new URLSearchParams(
-    search.startsWith('?') ? search.slice(1) : search,
-  )
+  return paramsFromQuery(queryFromSearch(search))
+}
+
+function paramsFromQuery(query: URLSearchParams): SceneInput {
   const next = structuredClone(DEFAULT_PARAMS)
   const mount = readMount(query.get('mount'))
   if (mount !== null) next.led.mount = mount
@@ -66,6 +107,8 @@ export function parseParams(search: string): SceneInput {
   if (ld !== null) next.lower.depth = ld
   const lt = readNumber(query.get('lt'))
   if (lt !== null) next.lower.thickness = lt
+  const lh = readNumber(query.get('lh'))
+  if (lh !== null) next.lower.heightFromFloor = lh
   const gap = readNumber(query.get('gap'))
   if (gap !== null) next.gap = gap
   const bh = readNumber(query.get('bh'))
@@ -86,12 +129,25 @@ export function parseParams(search: string): SceneInput {
 }
 
 export function applyViewer(input: SceneInput): SceneInput {
-  const result = evaluateScene(input)
-  if (!result.ok) return input
-  const { x, y } = result.scene.eye
+  if (validateScene(input).length > 0) return input
+  const built = buildScene(input)
+  const { x, y } = placeEye(built.eye, built.occluders, built.floorY)
   if (x === input.viewer.distance && y === input.viewer.eyeHeight) return input
   return {
     ...input,
     viewer: { distance: x, eyeHeight: y },
   }
+}
+
+export function applyEyePreset(
+  input: SceneInput,
+  fromFloor: number,
+): SceneInput {
+  return applyViewer({
+    ...input,
+    viewer: {
+      ...input.viewer,
+      eyeHeight: fromFloor - input.lower.heightFromFloor,
+    },
+  })
 }

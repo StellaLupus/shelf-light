@@ -8,6 +8,7 @@ export function validateScene(input: SceneInput): ValidationError[] {
     input.upper.thickness,
     input.lower.depth,
     input.lower.thickness,
+    input.lower.heightFromFloor,
     input.blend.height,
     input.blend.thickness,
     input.led.width,
@@ -30,6 +31,15 @@ export function validateScene(input: SceneInput): ValidationError[] {
   }
   if (input.upper.thickness <= 0 || input.lower.thickness <= 0) {
     errors.push({ code: 'thickness', message: 'Толщина полки должна быть больше 0 мм' })
+  }
+  if (
+    !(input.lower.heightFromFloor > 0) ||
+    !(input.lower.heightFromFloor > input.lower.thickness)
+  ) {
+    errors.push({
+      code: 'lower.heightFromFloor',
+      message: 'Высота нижней полки от пола должна быть больше толщины полки',
+    })
   }
   if (input.led.width <= 0) {
     errors.push({ code: 'led.width', message: 'Ширина ленты должна быть больше 0 мм' })

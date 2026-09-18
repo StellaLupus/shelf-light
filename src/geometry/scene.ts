@@ -139,6 +139,7 @@ export function buildScene(input: SceneInput): BuiltScene {
     lower,
     valance,
     occluders: solids.filter((rect) => rect.width > 0 && rect.height > 0),
+    floorY: -input.lower.heightFromFloor,
     eye: { x: input.viewer.distance, y: input.viewer.eyeHeight },
   }
 }

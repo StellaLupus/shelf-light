@@ -7,8 +7,9 @@ import {
 import {
   applyViewer,
   DEFAULT_PARAMS,
-  parseParams,
-  serializeParams,
+  parseState,
+  serializeState,
+  type ViewMode,
 } from './state/params.ts'
 import { Controls } from './ui/Controls.tsx'
 import { glareStatusText } from './ui/status.ts'
@@ -18,6 +19,7 @@ type OkResult = Extract<SceneResult, { ok: true }>
 
 type AppState = {
   params: SceneInput
+  view: ViewMode
   result: SceneResult
   shown: OkResult
 }
@@ -26,37 +28,45 @@ const defaultResult = evaluateScene(DEFAULT_PARAMS)
 if (!defaultResult.ok) throw new Error('Default scene must be valid')
 const fallback: OkResult = defaultResult
 
-function bootState(): AppState {
-  const params = applyViewer(parseParams(window.location.search))
+function stateFromSearch(
+  search: string,
+  previousShown: OkResult = fallback,
+): AppState {
+  const { params: parsed, view } = parseState(search)
+  const params = applyViewer(parsed)
   const result = evaluateScene(params)
-  if (result.ok) return { params, result, shown: result }
-  return { params, result, shown: fallback }
+  if (result.ok) return { params, view, result, shown: result }
+  return { params, view, result, shown: previousShown }
+}
+
+function bootState(): AppState {
+  return stateFromSearch(window.location.search)
 }
 
 export default function App() {
-  const [{ params, result, shown }, setState] = useState(bootState)
+  const [{ params, view, result, shown }, setState] = useState(bootState)
 
   const updateParams = (next: SceneInput): void => {
     const placed = applyViewer(next)
     const nextResult = evaluateScene(placed)
     setState((prev) => {
       if (nextResult.ok) {
-        return { params: placed, result: nextResult, shown: nextResult }
+        return { ...prev, params: placed, result: nextResult, shown: nextResult }
       }
-      return { params: next, result: nextResult, shown: prev.shown }
+      return { ...prev, params: next, result: nextResult }
     })
   }
 
   useEffect(() => {
-    const next = `?${serializeParams(params).toString()}`
+    const next = `?${serializeState(params, view).toString()}`
     if (window.location.search !== next) {
       window.history.replaceState(null, '', next)
     }
-  }, [params])
+  }, [params, view])
 
   useEffect(() => {
     const onPopState = (): void => {
-      updateParams(parseParams(window.location.search))
+      setState((prev) => stateFromSearch(window.location.search, prev.shown))
     }
     window.addEventListener('popstate', onPopState)
     return () => window.removeEventListener('popstate', onPopState)
@@ -67,15 +77,34 @@ export default function App() {
       <header className="header">
         <h1>Полки и подсветка орхидей</h1>
         <p className="lead">
-          Разрез двух полок: лента на верхней светит на нижнюю. Красный луч —
-          прямой путь к глазу, зелёный — перекрыт блендой или полкой.
+          Разрез двух полок: лента на верхней светит на нижнюю. Режим «Лучи» —
+          путь к глазу, «Заливка» — зона прямого света.
         </p>
       </header>
       <div className="layout">
         <section className="stage">
+          <div className="view-toggle" data-testid="view-toggle">
+            <button
+              type="button"
+              data-view="glare"
+              aria-pressed={view === 'glare'}
+              onClick={() => setState((prev) => ({ ...prev, view: 'glare' }))}
+            >
+              Лучи
+            </button>
+            <button
+              type="button"
+              data-view="lit"
+              aria-pressed={view === 'lit'}
+              onClick={() => setState((prev) => ({ ...prev, view: 'lit' }))}
+            >
+              Заливка
+            </button>
+          </div>
           <SectionView
             scene={shown.scene}
             evaluation={shown.evaluation}
+            view={view}
             onEyeMove={(point) =>
               updateParams({
                 ...params,

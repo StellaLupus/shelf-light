@@ -20,6 +20,7 @@ describe('eye marker hit target', () => {
       createElement(SectionView, {
         scene: result.scene,
         evaluation: result.evaluation,
+        view: 'glare',
         onEyeMove: () => undefined,
       }),
     )
@@ -31,5 +32,56 @@ describe('eye marker hit target', () => {
     expect(html).not.toMatch(/class="diagram"[^>]*cursor/)
     expect(attr(html, 'eye-hit', 'cx')).toBe(attr(html, 'eye', 'cx'))
     expect(attr(html, 'eye-hit', 'cy')).toBe(attr(html, 'eye', 'cy'))
+  })
+
+  test('always draws the floor and keeps the eye in both views', () => {
+    const result = evaluateScene(DEFAULT_PARAMS)
+    expectOk(result)
+    for (const view of ['glare', 'lit'] as const) {
+      const html = renderToStaticMarkup(
+        createElement(SectionView, {
+          scene: result.scene,
+          evaluation: result.evaluation,
+          view,
+          onEyeMove: () => undefined,
+        }),
+      )
+      expect(attr(html, 'diagram', 'data-view')).toBe(view)
+      expect(html).toContain('data-testid="floor"')
+      expect(html).toContain('data-testid="eye"')
+    }
+  })
+
+  test('fill mode hides emit-to-eye rays and the plant fan', () => {
+    const result = evaluateScene(DEFAULT_PARAMS)
+    expectOk(result)
+    const html = renderToStaticMarkup(
+      createElement(SectionView, {
+        scene: result.scene,
+        evaluation: result.evaluation,
+        view: 'lit',
+        onEyeMove: () => undefined,
+      }),
+    )
+    expect(html).toContain('data-testid="lit-region"')
+    expect(html).not.toContain('ray-open')
+    expect(html).not.toContain('ray-blocked')
+    expect(html).not.toContain('plant-fan')
+  })
+
+  test('glare mode shows rays and no fill polygons', () => {
+    const result = evaluateScene(DEFAULT_PARAMS)
+    expectOk(result)
+    const html = renderToStaticMarkup(
+      createElement(SectionView, {
+        scene: result.scene,
+        evaluation: result.evaluation,
+        view: 'glare',
+        onEyeMove: () => undefined,
+      }),
+    )
+    expect(html).toMatch(/ray-open|ray-blocked/)
+    expect(html).toContain('plant-fan')
+    expect(html).not.toContain('data-testid="lit-region"')
   })
 })

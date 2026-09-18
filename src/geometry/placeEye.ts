@@ -21,12 +21,16 @@ function pushOut(point: Point, rect: Rect): Point {
   return { x: point.x, y: rect.y + rect.height }
 }
 
-export function placeEye(requested: Point, occluders: readonly Rect[]): Point {
+export function placeEye(
+  requested: Point,
+  occluders: readonly Rect[],
+  floorY: number,
+): Point {
   let point = { x: requested.x, y: requested.y }
   for (let pass = 0; pass < 2; pass += 1) {
     for (const rect of occluders) {
       if (isInterior(rect, point)) point = pushOut(point, rect)
     }
   }
-  return { x: Math.max(0, point.x), y: point.y }
+  return { x: Math.max(0, point.x), y: Math.max(floorY, point.y) }
 }

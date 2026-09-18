@@ -21,7 +21,7 @@ function offsetAlong(point: Point, normal: Point): Point {
   }
 }
 
-function isInFront(from: Point, to: Point, normal: Point): boolean {
+export function isInFront(from: Point, to: Point, normal: Point): boolean {
   return (to.x - from.x) * normal.x + (to.y - from.y) * normal.y > 1e-9
 }
 
@@ -68,7 +68,9 @@ export function segmentHitsRect(a: Point, b: Point, rect: Rect): boolean {
   return t1 > epsilon
 }
 
-function sampleSurface(surface: EmitSurface): { from: Point; normal: Point }[] {
+export function sampleEmitPoints(
+  surface: EmitSurface,
+): { from: Point; normal: Point }[] {
   const steps = INTERIOR_SAMPLE_COUNT + 1
   const samples: { from: Point; normal: Point }[] = []
   for (let i = 0; i <= steps; i += 1) {
@@ -82,10 +84,12 @@ function sampleSurface(surface: EmitSurface): { from: Point; normal: Point }[] {
   return samples
 }
 
-export function evaluateVisibility(scene: BuiltScene): Evaluation {
+export function evaluateVisibility(
+  scene: BuiltScene,
+): Pick<Evaluation, 'hasDirectGlare' | 'samples'> {
   const samples: RaySample[] = []
   for (const surface of scene.emitSurfaces) {
-    for (const { from, normal } of sampleSurface(surface)) {
+    for (const { from, normal } of sampleEmitPoints(surface)) {
       const occluded =
         !isInFront(from, scene.eye, normal) ||
         scene.occluders.some((rect) => segmentHitsRect(from, scene.eye, rect))

@@ -1,5 +1,6 @@
 import { useRef, useState, type PointerEvent } from 'react'
 import type { BuiltScene, Evaluation, Point, ProfileShape } from '../geometry'
+import type { ViewMode } from '../state/params.ts'
 import { pointOnSurface } from '../geometry/visibility.ts'
 import {
   EYE_HIT_RADIUS,
@@ -12,6 +13,7 @@ import { buildDiagram, diagramViewBox } from './diagram.ts'
 type SectionViewProps = {
   scene: BuiltScene
   evaluation: Evaluation
+  view: ViewMode
   onEyeMove: (point: Point) => void
 }
 
@@ -83,7 +85,12 @@ function readCtm(svg: SVGSVGElement): SvgMatrix | null {
   return { a: ctm.a, b: ctm.b, c: ctm.c, d: ctm.d, e: ctm.e, f: ctm.f }
 }
 
-export function SectionView({ scene, evaluation, onEyeMove }: SectionViewProps) {
+export function SectionView({
+  scene,
+  evaluation,
+  view,
+  onEyeMove,
+}: SectionViewProps) {
   const svgRef = useRef<SVGSVGElement>(null)
   const draggingRef = useRef(false)
   const [dragging, setDragging] = useState(false)
@@ -134,9 +141,10 @@ export function SectionView({ scene, evaluation, onEyeMove }: SectionViewProps) 
       ref={svgRef}
       className={dragging ? 'diagram is-dragging' : 'diagram'}
       data-testid="diagram"
+      data-view={view}
       viewBox={frozenViewBox ?? liveViewBox}
       role="img"
-      aria-label="Разрез полок, ленты и лучей к глазу"
+      aria-label="Разрез полок, ленты, пола и глаза"
       onPointerMove={moveDrag}
       onPointerUp={endDrag}
       onPointerCancel={endDrag}
@@ -148,6 +156,25 @@ export function SectionView({ scene, evaluation, onEyeMove }: SectionViewProps) 
         x2={diagram.wall.b.x}
         y2={flip(diagram.wall.b.y)}
       />
+      <line
+        className="floor"
+        data-testid="floor"
+        x1={diagram.floor.a.x}
+        y1={flip(diagram.floor.a.y)}
+        x2={diagram.floor.b.x}
+        y2={flip(diagram.floor.b.y)}
+      />
+      {view === 'lit' ? (
+        <g data-testid="lit-region">
+          {diagram.litRegion.map((polygon, index) => (
+            <polygon
+              key={`lit-${index}`}
+              className="lit-region"
+              points={pointsAttr(polygon)}
+            />
+          ))}
+        </g>
+      ) : null}
       <rect
         className="shelf"
         x={diagram.lower.x}
@@ -171,27 +198,31 @@ export function SectionView({ scene, evaluation, onEyeMove }: SectionViewProps) 
           height={diagram.valance.height}
         />
       ) : null}
-      {diagram.plantFan.map((segment, index) => (
-        <line
-          key={`fan-${index}`}
-          className="plant-fan"
-          x1={segment.a.x}
-          y1={flip(segment.a.y)}
-          x2={segment.b.x}
-          y2={flip(segment.b.y)}
-        />
-      ))}
-      {diagram.rays.map((ray, index) => (
-        <line
-          key={`ray-${index}`}
-          className={ray.occluded ? 'ray-blocked' : 'ray-open'}
-          data-occluded={ray.occluded ? 'true' : 'false'}
-          x1={ray.from.x}
-          y1={flip(ray.from.y)}
-          x2={ray.to.x}
-          y2={flip(ray.to.y)}
-        />
-      ))}
+      {view === 'glare'
+        ? diagram.plantFan.map((segment, index) => (
+            <line
+              key={`fan-${index}`}
+              className="plant-fan"
+              x1={segment.a.x}
+              y1={flip(segment.a.y)}
+              x2={segment.b.x}
+              y2={flip(segment.b.y)}
+            />
+          ))
+        : null}
+      {view === 'glare'
+        ? diagram.rays.map((ray, index) => (
+            <line
+              key={`ray-${index}`}
+              className={ray.occluded ? 'ray-blocked' : 'ray-open'}
+              data-occluded={ray.occluded ? 'true' : 'false'}
+              x1={ray.from.x}
+              y1={flip(ray.from.y)}
+              x2={ray.to.x}
+              y2={flip(ray.to.y)}
+            />
+          ))
+        : null}
       {ledBody(diagram.led)}
       <circle
         className="eye-hit"

@@ -1,10 +1,15 @@
 import { describe, expect, test } from 'vitest'
 import { evaluateScene, pocketCorner } from '../../src/geometry'
 import {
+  applyEyePreset,
   applyViewer,
   DEFAULT_PARAMS,
+  EYE_PRESETS,
   parseParams,
+  parseState,
+  parseView,
   serializeParams,
+  serializeState,
 } from '../../src/state/params'
 import { expectOk } from '../expectOk'
 
@@ -95,6 +100,57 @@ describe('URL scene params', () => {
     expect(Number(query.get('vd'))).toBe(result.scene.eye.x)
     expect(Number(query.get('vh'))).toBe(result.scene.eye.y)
     expect(query.get('vd') === '100' && query.get('vh') === '359').toBe(false)
+  })
+
+  test('missing lh defaults to 1200 and changing H does not move scene eye', () => {
+    const restored = parseParams('?vd=600&vh=180')
+    expect(restored.lower.heightFromFloor).toBe(1200)
+    expect(restored.viewer.eyeHeight).toBe(180)
+    const raised = {
+      ...restored,
+      lower: { ...restored.lower, heightFromFloor: 1400 },
+    }
+    expect(raised.viewer.eyeHeight).toBe(180)
+    expect(evaluateScene(raised).ok).toBe(true)
+  })
+
+  test('H equal to lower thickness is rejected and a valid scene stays computable', () => {
+    const invalid = {
+      ...DEFAULT_PARAMS,
+      lower: { ...DEFAULT_PARAMS.lower, thickness: 18, heightFromFloor: 18 },
+    }
+    expect(evaluateScene(invalid).ok).toBe(false)
+    expect(evaluateScene(DEFAULT_PARAMS).ok).toBe(true)
+  })
+
+  test('view=lit and lh=1400 restore fill mode and shelf height', () => {
+    const restored = parseState('?view=lit&lh=1400')
+    expect(restored.params.lower.heightFromFloor).toBe(1400)
+    expect(restored.view).toBe('lit')
+    const query = serializeState(restored.params, restored.view)
+    expect(query.get('view')).toBe('lit')
+    expect(query.get('lh')).toBe('1400')
+  })
+
+  test('legacy URL without view or lh is glare mode at H=1200', () => {
+    expect(parseView('?mount=downward')).toBe('glare')
+    expect(parseView('?view=nope')).toBe('glare')
+    expect(parseParams('?mount=downward').lower.heightFromFloor).toBe(1200)
+    expect(serializeParams(DEFAULT_PARAMS).get('lh')).toBe('1200')
+  })
+
+  test('eye presets write scene Y from the floor and keep distance', () => {
+    const input = {
+      ...DEFAULT_PARAMS,
+      lower: { ...DEFAULT_PARAMS.lower, heightFromFloor: 1200 },
+      viewer: { distance: 700, eyeHeight: 180 },
+    }
+    const standing = applyEyePreset(input, EYE_PRESETS.standing)
+    const sitting = applyEyePreset(input, EYE_PRESETS.sitting)
+    const lying = applyEyePreset(input, EYE_PRESETS.lying)
+    expect(standing.viewer).toEqual({ distance: 700, eyeHeight: 400 })
+    expect(sitting.viewer).toEqual({ distance: 700, eyeHeight: 0 })
+    expect(lying.viewer).toEqual({ distance: 700, eyeHeight: -600 })
   })
 
   test('applyViewer keeps a free-space eye so sliders still set viewer', () => {

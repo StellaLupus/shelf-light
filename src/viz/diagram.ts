@@ -14,10 +14,12 @@ export type DiagramModel = {
   upper: Rect
   lower: Rect
   valance: Rect
+  floor: Segment
   led: ProfileShape
   eye: Point
   rays: RaySample[]
   plantFan: Segment[]
+  litRegion: Point[][]
   bounds: { minX: number; minY: number; maxX: number; maxY: number }
 }
 
@@ -69,8 +71,18 @@ export function buildDiagram(
         return { a: from, b: { x: from.x + (t - 0.5) * 30, y: 0 } }
       })
     : []
+  const floorX = Math.max(
+    scene.lower.width,
+    scene.upper.width,
+    scene.eye.x,
+    400,
+  )
+  const floor: Segment = {
+    a: { x: 0, y: scene.floorY },
+    b: { x: floorX, y: scene.floorY },
+  }
   const wall: Segment = {
-    a: { x: 0, y: Math.min(scene.lower.y, scene.eye.y) - 40 },
+    a: { x: 0, y: scene.floorY },
     b: {
       x: 0,
       y: Math.max(scene.upper.y + scene.upper.height, scene.eye.y) + 40,
@@ -79,6 +91,8 @@ export function buildDiagram(
   const points = [
     wall.a,
     wall.b,
+    floor.a,
+    floor.b,
     scene.eye,
     ...profilePoints(scene.profileShape),
     ...rectPoints(scene.upper),
@@ -91,10 +105,12 @@ export function buildDiagram(
     upper: scene.upper,
     lower: scene.lower,
     valance: scene.valance,
+    floor,
     led: scene.profileShape,
     eye: scene.eye,
     rays: evaluation.samples,
     plantFan,
+    litRegion: evaluation.litRegion,
     bounds: boundsOf(points),
   }
 }

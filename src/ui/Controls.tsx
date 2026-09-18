@@ -1,4 +1,5 @@
 import type { SceneInput } from '../geometry'
+import { EYE_PRESETS, applyEyePreset } from '../state/params.ts'
 import { NumberField } from './NumberField.tsx'
 
 type ControlsProps = {
@@ -110,6 +111,21 @@ export function Controls({ params, onChange }: ControlsProps) {
         }
       />
       <NumberField
+        id="lower-from-floor"
+        label="Высота нижней полки от пола"
+        value={params.lower.heightFromFloor}
+        min={50}
+        max={2500}
+        step={1}
+        unit="мм"
+        onChange={(heightFromFloor) =>
+          onChange({
+            ...params,
+            lower: { ...params.lower, heightFromFloor },
+          })
+        }
+      />
+      <NumberField
         id="gap"
         label="Зазор между полками"
         value={params.gap}
@@ -197,7 +213,7 @@ export function Controls({ params, onChange }: ControlsProps) {
         id="viewer-height"
         label="Высота глаз"
         value={params.viewer.eyeHeight}
-        min={-400}
+        min={-800}
         max={1600}
         step={1}
         unit="мм"
@@ -205,6 +221,29 @@ export function Controls({ params, onChange }: ControlsProps) {
           onChange({ ...params, viewer: { ...params.viewer, eyeHeight } })
         }
       />
+      <p className="hint">
+        От пола: {params.lower.heightFromFloor + params.viewer.eyeHeight} мм
+      </p>
+      <div className="presets" data-testid="eye-presets">
+        <button
+          type="button"
+          onClick={() => onChange(applyEyePreset(params, EYE_PRESETS.standing))}
+        >
+          Стоя
+        </button>
+        <button
+          type="button"
+          onClick={() => onChange(applyEyePreset(params, EYE_PRESETS.sitting))}
+        >
+          Сидя
+        </button>
+        <button
+          type="button"
+          onClick={() => onChange(applyEyePreset(params, EYE_PRESETS.lying))}
+        >
+          Лёжа
+        </button>
+      </div>
     </form>
   )
 }

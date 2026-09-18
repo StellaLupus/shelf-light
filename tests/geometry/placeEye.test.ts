@@ -23,7 +23,7 @@ describe('eye placement', () => {
     expectOk(built)
     const requested = { x: 100, y: -9 }
     expect(isInterior(built.scene.lower, requested)).toBe(true)
-    const placed = placeEye(requested, built.scene.occluders)
+    const placed = placeEye(requested, built.scene.occluders, built.scene.floorY)
     expect(isInterior(built.scene.lower, placed)).toBe(false)
     expect(placed.x).toBeGreaterThanOrEqual(0)
     expect(isInterior(built.scene.lower, built.scene.eye)).toBe(false)
@@ -33,7 +33,7 @@ describe('eye placement', () => {
     const input = baseInput({ viewer: { distance: -20, eyeHeight: 50 } })
     const built = evaluateScene(input)
     expectOk(built)
-    const placed = placeEye({ x: -20, y: 50 }, built.scene.occluders)
+    const placed = placeEye({ x: -20, y: 50 }, built.scene.occluders, built.scene.floorY)
     expect(placed).toEqual({ x: 0, y: 50 })
     expect(built.scene.eye).toEqual({ x: 0, y: 50 })
   })
@@ -43,7 +43,7 @@ describe('eye placement', () => {
     const input = baseInput({ viewer: { distance: 100, eyeHeight: 150 } })
     const built = evaluateScene(input)
     expectOk(built)
-    expect(placeEye(requested, built.scene.occluders)).toEqual(requested)
+    expect(placeEye(requested, built.scene.occluders, built.scene.floorY)).toEqual(requested)
     expect(built.scene.eye).toEqual(requested)
   })
 
@@ -55,7 +55,7 @@ describe('eye placement', () => {
       viewer: { distance: 100, eyeHeight: 300 },
     })
     expectOk(built)
-    expect(placeEye(requested, built.scene.occluders)).toEqual(requested)
+    expect(placeEye(requested, built.scene.occluders, built.scene.floorY)).toEqual(requested)
     expect(built.scene.eye).toEqual(requested)
   })
 
@@ -68,7 +68,7 @@ describe('eye placement', () => {
     expectOk(built)
     const requested = { x: 244, y: 280 }
     expect(isInterior(built.scene.valance, requested)).toBe(true)
-    const placed = placeEye(requested, built.scene.occluders)
+    const placed = placeEye(requested, built.scene.occluders, built.scene.floorY)
     expect(isInterior(built.scene.valance, placed)).toBe(false)
     expect(isInterior(built.scene.valance, built.scene.eye)).toBe(false)
   })
@@ -91,7 +91,7 @@ describe('eye placement', () => {
     if (!body) return
     const requested = { x: 230, y: 290 }
     expect(isInterior(body, requested)).toBe(true)
-    const placed = placeEye(requested, built.scene.occluders)
+    const placed = placeEye(requested, built.scene.occluders, built.scene.floorY)
     expect(isInterior(body, placed)).toBe(false)
     expect(isInterior(body, built.scene.eye)).toBe(false)
   })
@@ -115,7 +115,7 @@ describe('eye placement', () => {
       const pocket = pocketCorner(input)
       expect(requested.x).toBeLessThan(pocket.x)
       expect(requested.y).toBeLessThan(pocket.y)
-      expect(placeEye(requested, built.scene.occluders)).toEqual(requested)
+      expect(placeEye(requested, built.scene.occluders, built.scene.floorY)).toEqual(requested)
       expect(built.scene.eye).toEqual(requested)
     }
   })
