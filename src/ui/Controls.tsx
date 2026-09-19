@@ -1,4 +1,4 @@
-import type { SceneInput } from '../geometry'
+import { RECESSED25, type SceneInput } from '../geometry'
 import { EYE_PRESETS, applyEyePreset } from '../state/params.ts'
 import { NumberField } from './NumberField.tsx'
 
@@ -60,7 +60,48 @@ export function Controls({ params, onChange }: ControlsProps) {
           />
           Треугольный
         </label>
+        <label className="choice">
+          <input
+            type="radio"
+            name="mount"
+            value="recessed25"
+            checked={params.led.mount === 'recessed25'}
+            onChange={() =>
+              onChange({ ...params, led: { ...params.led, mount: 'recessed25' } })
+            }
+          />
+          Врезной 25°
+        </label>
       </fieldset>
+      {params.led.mount === 'recessed25' ? (
+        <fieldset data-testid="led-facing">
+          <legend>Разворот окна</legend>
+          <label className="choice">
+            <input
+              type="radio"
+              name="facing"
+              value="wall"
+              checked={params.led.facing === 'wall'}
+              onChange={() =>
+                onChange({ ...params, led: { ...params.led, facing: 'wall' } })
+              }
+            />
+            К стене
+          </label>
+          <label className="choice">
+            <input
+              type="radio"
+              name="facing"
+              value="room"
+              checked={params.led.facing === 'room'}
+              onChange={() =>
+                onChange({ ...params, led: { ...params.led, facing: 'room' } })
+              }
+            />
+            В комнату
+          </label>
+        </fieldset>
+      ) : null}
 
       <NumberField
         id="upper-depth"
@@ -78,7 +119,7 @@ export function Controls({ params, onChange }: ControlsProps) {
         id="upper-thickness"
         label="Толщина верхней полки"
         value={params.upper.thickness}
-        min={8}
+        min={params.led.mount === 'recessed25' ? RECESSED25.grooveDepth : 8}
         max={50}
         step={1}
         unit="мм"
@@ -159,19 +200,21 @@ export function Controls({ params, onChange }: ControlsProps) {
           onChange({ ...params, blend: { ...params.blend, thickness } })
         }
       />
-      <NumberField
-        id="led-width"
-        label="Ширина ленты"
-        value={params.led.width}
-        min={0}
-        max={40}
-        step={1}
-        unit="мм"
-        onChange={(width) =>
-          onChange({ ...params, led: { ...params.led, width } })
-        }
-      />
-      {params.led.mount === 'downward' ? (
+      {params.led.mount !== 'recessed25' ? (
+        <NumberField
+          id="led-width"
+          label="Ширина ленты"
+          value={params.led.width}
+          min={0}
+          max={40}
+          step={1}
+          unit="мм"
+          onChange={(width) =>
+            onChange({ ...params, led: { ...params.led, width } })
+          }
+        />
+      ) : null}
+      {params.led.mount === 'downward' || params.led.mount === 'recessed25' ? (
         <NumberField
           id="led-offset"
           label="Смещение ленты от стены"
@@ -185,18 +228,20 @@ export function Controls({ params, onChange }: ControlsProps) {
           }
         />
       ) : null}
-      <NumberField
-        id="led-drop"
-        label="Свес профиля"
-        value={params.led.profileDrop}
-        min={0}
-        max={30}
-        step={1}
-        unit="мм"
-        onChange={(profileDrop) =>
-          onChange({ ...params, led: { ...params.led, profileDrop } })
-        }
-      />
+      {params.led.mount !== 'recessed25' ? (
+        <NumberField
+          id="led-drop"
+          label="Свес профиля"
+          value={params.led.profileDrop}
+          min={0}
+          max={30}
+          step={1}
+          unit="мм"
+          onChange={(profileDrop) =>
+            onChange({ ...params, led: { ...params.led, profileDrop } })
+          }
+        />
+      ) : null}
       <NumberField
         id="viewer-distance"
         label="Расстояние до глаз"

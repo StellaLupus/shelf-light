@@ -103,6 +103,33 @@ describe('side-view diagram model', () => {
     expect(diagram.litRegion.length).toBeGreaterThan(0)
   })
 
+  test('recessed channel exposes a groove cutout and a milk segment, not a point', () => {
+    const input = baseInput({
+      led: {
+        mount: 'recessed25',
+        width: 10,
+        profileDrop: 2,
+        offsetFromWall: 40,
+        facing: 'wall',
+      },
+    })
+    const result = evaluateScene(input)
+    expectOk(result)
+    const diagram = buildDiagram(result.scene, result.evaluation)
+    expect(diagram.groove).toBeDefined()
+    expect(diagram.groove?.width).toBeCloseTo(35)
+    expect(diagram.groove?.height).toBeCloseTo(14)
+    expect(diagram.led.kind).toBe('recessed')
+    if (diagram.led.kind !== 'recessed') return
+    const milk = Math.hypot(
+      diagram.led.milkB.x - diagram.led.milkA.x,
+      diagram.led.milkB.y - diagram.led.milkA.y,
+    )
+    expect(milk).toBeCloseTo(14)
+    expect(milk).toBeGreaterThan(1)
+    expect(diagram.led.outline.length).toBeGreaterThan(2)
+  })
+
   test('ray occlusion flags match the engine boolean', () => {
     const result = evaluateScene(DEFAULT_PARAMS)
     expectOk(result)

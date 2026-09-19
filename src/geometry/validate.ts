@@ -1,3 +1,4 @@
+import { RECESSED25 } from './recessed.ts'
 import type { SceneInput, ValidationError } from './types.ts'
 
 export function validateScene(input: SceneInput): ValidationError[] {
@@ -41,7 +42,7 @@ export function validateScene(input: SceneInput): ValidationError[] {
       message: 'Высота нижней полки от пола должна быть больше толщины полки',
     })
   }
-  if (input.led.width <= 0) {
+  if (input.led.mount !== 'recessed25' && input.led.width <= 0) {
     errors.push({ code: 'led.width', message: 'Ширина ленты должна быть больше 0 мм' })
   }
   if (input.led.profileDrop < 0) {
@@ -50,7 +51,10 @@ export function validateScene(input: SceneInput): ValidationError[] {
   if (input.blend.height < 0 || input.blend.thickness < 0) {
     errors.push({ code: 'blend', message: 'Размеры бленды не могут быть отрицательными' })
   }
-  if (input.led.mount === 'downward' && input.led.offsetFromWall < 0) {
+  if (
+    (input.led.mount === 'downward' || input.led.mount === 'recessed25') &&
+    input.led.offsetFromWall < 0
+  ) {
     errors.push({
       code: 'led.offsetFromWall',
       message: 'Смещение ленты от стены не может быть отрицательным',
@@ -67,12 +71,27 @@ export function validateScene(input: SceneInput): ValidationError[] {
   }
   if (
     input.led.mount !== 'downward' &&
+    input.led.mount !== 'recessed25' &&
     input.led.width + input.blend.thickness > input.upper.depth
   ) {
     errors.push({
       code: 'led.overhang',
       message: 'Профиль не помещается между блендой и стеной',
     })
+  }
+  if (input.led.mount === 'recessed25') {
+    if (input.upper.thickness < RECESSED25.grooveDepth) {
+      errors.push({
+        code: 'upper.thickness',
+        message: `Толщина верхней полки должна быть не меньше ${RECESSED25.grooveDepth} мм для врезки`,
+      })
+    }
+    if (input.led.offsetFromWall + RECESSED25.bodyWidth > input.upper.depth) {
+      errors.push({
+        code: 'led.overhang',
+        message: 'Профиль выходит за переднюю кромку верхней полки',
+      })
+    }
   }
   return errors
 }

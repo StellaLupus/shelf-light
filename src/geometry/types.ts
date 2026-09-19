@@ -15,7 +15,9 @@ export type Rect = {
   height: number
 }
 
-export type MountType = 'downward' | 'radius' | 'ell' | 'triangle'
+export type LedFacing = 'wall' | 'room'
+
+export type MountType = 'downward' | 'radius' | 'ell' | 'triangle' | 'recessed25'
 
 export type EmitSegment = {
   kind: 'segment'
@@ -45,6 +47,7 @@ export type ProfileShape =
       startAngle: number
       endAngle: number
     }
+  | { kind: 'recessed'; milkA: Point; milkB: Point; outline: Point[] }
 
 export type SceneInput = {
   upper: { depth: number; thickness: number }
@@ -56,6 +59,7 @@ export type SceneInput = {
     mount: MountType
     profileDrop: number
     offsetFromWall: number
+    facing: LedFacing
   }
   viewer: { distance: number; eyeHeight: number }
 }
@@ -69,6 +73,7 @@ export type BuiltScene = {
   emitSurfaces: EmitSurface[]
   profileShape: ProfileShape
   profileBody?: Rect
+  groove?: Rect
   upper: Rect
   lower: Rect
   valance: Rect

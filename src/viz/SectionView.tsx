@@ -62,6 +62,24 @@ function ledBody(led: ProfileShape) {
       />
     )
   }
+  if (led.kind === 'recessed') {
+    return (
+      <g data-testid="led-body" data-kind="recessed">
+        <polygon
+          className="led-body"
+          points={pointsAttr(led.outline)}
+        />
+        <line
+          className="led-milk"
+          data-testid="led-milk"
+          x1={led.milkA.x}
+          y1={flip(led.milkA.y)}
+          x2={led.milkB.x}
+          y2={flip(led.milkB.y)}
+        />
+      </g>
+    )
+  }
   if (led.kind !== 'quarterCircle') {
     const _never: never = led
     throw new Error(`Unsupported LED body: ${JSON.stringify(_never)}`)
@@ -182,13 +200,23 @@ export function SectionView({
         width={diagram.lower.width}
         height={diagram.lower.height}
       />
-      <rect
-        className="shelf"
-        x={diagram.upper.x}
-        y={flip(diagram.upper.y + diagram.upper.height)}
-        width={diagram.upper.width}
-        height={diagram.upper.height}
-      />
+      {diagram.groove ? (
+        <path
+          className="shelf"
+          data-testid="shelf-upper"
+          fillRule="evenodd"
+          d={`M ${diagram.upper.x} ${flip(diagram.upper.y + diagram.upper.height)} h ${diagram.upper.width} v ${diagram.upper.height} h ${-diagram.upper.width} z M ${diagram.groove.x} ${flip(diagram.groove.y + diagram.groove.height)} h ${diagram.groove.width} v ${diagram.groove.height} h ${-diagram.groove.width} z`}
+        />
+      ) : (
+        <rect
+          className="shelf"
+          data-testid="shelf-upper"
+          x={diagram.upper.x}
+          y={flip(diagram.upper.y + diagram.upper.height)}
+          width={diagram.upper.width}
+          height={diagram.upper.height}
+        />
+      )}
       {diagram.valance.width > 0 && diagram.valance.height > 0 ? (
         <rect
           className="valance"

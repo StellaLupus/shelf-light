@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import {
+  RECESSED25,
   evaluateScene,
   isDirectlyLit,
   pointInLitRegion,
@@ -149,6 +150,101 @@ describe('direct-lit region', () => {
         false,
       )
     }
+  })
+
+  test('recessed25 fills the window bay and not the cheek or the metal behind the milk', () => {
+    const offset = 40
+    const gap = 300
+    const result = evaluateScene(
+      baseInput({
+        gap,
+        led: {
+          mount: 'recessed25',
+          width: 10,
+          profileDrop: 2,
+          offsetFromWall: offset,
+          facing: 'wall',
+        },
+        viewer: {
+          distance: offset + RECESSED25.stopWidth + 10,
+          eyeHeight: gap - 20,
+        },
+      }),
+    )
+    expectOk(result)
+    const groove = result.scene.groove
+    expect(groove).toBeDefined()
+    if (!groove) return
+    const inBay = { x: groove.x + 10, y: result.scene.upper.y - 20 }
+    const cheek = result.scene.occluders.find(
+      (rect) => rect.x === 0 && rect.y === result.scene.upper.y && rect.width === groove.x,
+    )
+    const metal = result.scene.occluders.find(
+      (rect) =>
+        rect.y === groove.y &&
+        rect.height === groove.height &&
+        rect.x > groove.x &&
+        rect.x + rect.width <= groove.x + groove.width + 1e-9,
+    )
+    expect(cheek).toBeDefined()
+    expect(metal).toBeDefined()
+    if (!cheek || !metal) return
+    const inCheek = {
+      x: cheek.x + cheek.width / 2,
+      y: cheek.y + cheek.height / 2,
+    }
+    const inMetal = {
+      x: metal.x + metal.width / 2,
+      y: metal.y + metal.height / 2,
+    }
+    expect(isDirectlyLit(result.scene, inBay)).toBe(true)
+    expect(pointInLitRegion(result.evaluation.litRegion, inBay)).toBe(true)
+    expect(isDirectlyLit(result.scene, inCheek)).toBe(false)
+    expect(pointInLitRegion(result.evaluation.litRegion, inCheek)).toBe(false)
+    expect(isDirectlyLit(result.scene, inMetal)).toBe(false)
+    expect(pointInLitRegion(result.evaluation.litRegion, inMetal)).toBe(false)
+    expect(isDirectlyLit(result.scene, result.scene.eye)).toBe(
+      result.evaluation.hasDirectGlare,
+    )
+    expect(pointInLitRegion(result.evaluation.litRegion, result.scene.eye)).toBe(
+      true,
+    )
+    expect(result.evaluation.hasDirectGlare).toBe(true)
+  })
+
+  test('fill reaches lit air near a shelf edge instead of stopping on the face', () => {
+    const downward = evaluateScene(
+      baseInput({
+        lower: { depth: 200, thickness: 18, heightFromFloor: 1200 },
+        blend: { height: 0, thickness: 0 },
+      }),
+    )
+    expectOk(downward)
+    const underUpperFront = { x: 240, y: 280 }
+    expect(isDirectlyLit(downward.scene, underUpperFront)).toBe(true)
+    expect(pointInLitRegion(downward.evaluation.litRegion, underUpperFront)).toBe(
+      true,
+    )
+    const pastLowerFront = { x: downward.scene.lower.width + 2, y: 1 }
+    expect(isDirectlyLit(downward.scene, pastLowerFront)).toBe(true)
+    expect(pointInLitRegion(downward.evaluation.litRegion, pastLowerFront)).toBe(
+      true,
+    )
+
+    const recessed = evaluateScene(
+      baseInput({ led: { mount: 'recessed25' } }),
+    )
+    expectOk(recessed)
+    const aboveLower = { x: 160, y: 100 }
+    expect(isDirectlyLit(recessed.scene, aboveLower)).toBe(true)
+    expect(pointInLitRegion(recessed.evaluation.litRegion, aboveLower)).toBe(
+      true,
+    )
+    const justPastLower = { x: recessed.scene.lower.width + 2, y: 0 }
+    expect(isDirectlyLit(recessed.scene, justPastLower)).toBe(true)
+    expect(pointInLitRegion(recessed.evaluation.litRegion, justPastLower)).toBe(
+      true,
+    )
   })
 
   test('returned region stays on or above the floor and in front of the wall', () => {

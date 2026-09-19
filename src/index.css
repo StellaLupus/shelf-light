@@ -123,6 +123,13 @@ body {
   opacity: 0.9;
 }
 
+.led-milk {
+  stroke: #f4f0d8;
+  stroke-linecap: round;
+  stroke-width: 3px;
+  vector-effect: non-scaling-stroke;
+}
+
 .ray-open,
 .ray-blocked {
   vector-effect: non-scaling-stroke;

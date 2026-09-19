@@ -29,8 +29,30 @@ describe('URL scene params', () => {
     expect(evaluateScene(restored).ok).toBe(true)
   })
 
-  test('writes radius, ell, triangle, and downward mounts', () => {
-    for (const mount of ['radius', 'ell', 'triangle', 'downward'] as const) {
+  test('round-trips recessed25 facing and defaults missing lface to wall', () => {
+    const input = {
+      ...DEFAULT_PARAMS,
+      led: {
+        ...DEFAULT_PARAMS.led,
+        mount: 'recessed25' as const,
+        facing: 'room' as const,
+      },
+    }
+    const query = serializeParams(input)
+    expect(query.get('mount')).toBe('recessed25')
+    expect(query.get('lface')).toBe('room')
+    const restored = parseParams(`?${query.toString()}`)
+    expect(restored.led.mount).toBe('recessed25')
+    expect(restored.led.facing).toBe('room')
+    expect(evaluateScene(restored).ok).toBe(true)
+    const missing = parseParams('?mount=recessed25')
+    expect(missing.led.mount).toBe('recessed25')
+    expect(missing.led.facing).toBe('wall')
+    expect(serializeParams(missing).get('lface')).toBe('wall')
+  })
+
+  test('writes radius, ell, triangle, downward, and recessed25 mounts', () => {
+    for (const mount of ['radius', 'ell', 'triangle', 'downward', 'recessed25'] as const) {
       const query = serializeParams({
         ...DEFAULT_PARAMS,
         led: { ...DEFAULT_PARAMS.led, mount },

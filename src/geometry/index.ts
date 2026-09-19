@@ -7,6 +7,7 @@ import { evaluateVisibility } from './visibility.ts'
 
 export { isDirectlyLit, pointInLitRegion } from './litRegion.ts'
 export { placeEye } from './placeEye.ts'
+export { RECESSED25 } from './recessed.ts'
 export { pocketCorner } from './scene.ts'
 export { INTERIOR_SAMPLE_COUNT } from './visibility.ts'
 export type {
@@ -15,6 +16,7 @@ export type {
   EmitSegment,
   EmitSurface,
   Evaluation,
+  LedFacing,
   MountType,
   Point,
   ProfileShape,

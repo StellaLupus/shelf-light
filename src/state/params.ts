@@ -1,4 +1,4 @@
-import { placeEye, type MountType, type SceneInput } from '../geometry'
+import { placeEye, type LedFacing, type MountType, type SceneInput } from '../geometry'
 import { buildScene } from '../geometry/scene.ts'
 import { validateScene } from '../geometry/validate.ts'
 
@@ -20,6 +20,7 @@ export const DEFAULT_PARAMS: SceneInput = {
     mount: 'downward',
     profileDrop: 2,
     offsetFromWall: 40,
+    facing: 'wall',
   },
   viewer: { distance: 600, eyeHeight: 180 },
 }
@@ -36,10 +37,16 @@ function readMount(value: string | null): MountType | null {
     value === 'downward' ||
     value === 'radius' ||
     value === 'ell' ||
-    value === 'triangle'
+    value === 'triangle' ||
+    value === 'recessed25'
   ) {
     return value
   }
+  return null
+}
+
+function readFacing(value: string | null): LedFacing | null {
+  if (value === 'wall' || value === 'room') return value
   return null
 }
 
@@ -57,6 +64,9 @@ export function serializeParams(input: SceneInput): URLSearchParams {
   params.set('lw', String(input.led.width))
   params.set('lpd', String(input.led.profileDrop))
   params.set('lo', String(input.led.offsetFromWall))
+  if (input.led.mount === 'recessed25') {
+    params.set('lface', input.led.facing)
+  }
   params.set('vd', String(input.viewer.distance))
   params.set('vh', String(input.viewer.eyeHeight))
   return params
@@ -121,6 +131,8 @@ function paramsFromQuery(query: URLSearchParams): SceneInput {
   if (lpd !== null) next.led.profileDrop = lpd
   const lo = readNumber(query.get('lo'))
   if (lo !== null) next.led.offsetFromWall = lo
+  const lface = readFacing(query.get('lface'))
+  if (lface !== null) next.led.facing = lface
   const vd = readNumber(query.get('vd'))
   if (vd !== null) next.viewer.distance = vd
   const vh = readNumber(query.get('vh'))

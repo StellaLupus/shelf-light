@@ -69,6 +69,34 @@ describe('eye marker hit target', () => {
     expect(html).not.toContain('plant-fan')
   })
 
+  test('draws a recessed cutout and milk for both facings', () => {
+    for (const facing of ['wall', 'room'] as const) {
+      const result = evaluateScene({
+        ...DEFAULT_PARAMS,
+        led: {
+          ...DEFAULT_PARAMS.led,
+          mount: 'recessed25',
+          offsetFromWall: 40,
+          facing,
+        },
+      })
+      expectOk(result)
+      const html = renderToStaticMarkup(
+        createElement(SectionView, {
+          scene: result.scene,
+          evaluation: result.evaluation,
+          view: 'glare',
+          onEyeMove: () => undefined,
+        }),
+      )
+      expect(html).toContain('data-kind="recessed"')
+      expect(html).toContain('data-testid="led-milk"')
+      expect(html).toContain('data-testid="shelf-upper"')
+      expect(html).toMatch(/fill-rule="evenodd"|fillRule="evenodd"/)
+      expect(html).toMatch(/ray-open|ray-blocked/)
+    }
+  })
+
   test('glare mode shows rays and no fill polygons', () => {
     const result = evaluateScene(DEFAULT_PARAMS)
     expectOk(result)

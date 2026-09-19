@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { INTERIOR_SAMPLE_COUNT, evaluateScene, pocketCorner } from '../../src/geometry'
+import { INTERIOR_SAMPLE_COUNT, RECESSED25, evaluateScene, pocketCorner } from '../../src/geometry'
 import { expectOk } from '../expectOk'
 import { baseInput } from './fixtures'
 
@@ -262,6 +262,43 @@ describe('direct glare', () => {
       true,
     )
     expect(result.evaluation.hasDirectGlare).toBe(false)
+  })
+
+  test('recessed25 glares through the window and is blocked through remaining shelf wood', () => {
+    const offset = 40
+    const gap = 300
+    const shared = {
+      gap,
+      led: {
+        mount: 'recessed25' as const,
+        width: 10,
+        profileDrop: 2,
+        offsetFromWall: offset,
+        facing: 'wall' as const,
+      },
+    }
+    const throughWindow = evaluateScene(
+      baseInput({
+        ...shared,
+        viewer: {
+          distance: offset + RECESSED25.stopWidth + 10,
+          eyeHeight: gap - 20,
+        },
+      }),
+    )
+    const throughWood = evaluateScene(
+      baseInput({
+        ...shared,
+        viewer: { distance: 10, eyeHeight: gap + 30 },
+      }),
+    )
+    expectOk(throughWindow)
+    expectOk(throughWood)
+    expect(throughWindow.evaluation.hasDirectGlare).toBe(true)
+    expect(throughWood.evaluation.hasDirectGlare).toBe(false)
+    expect(throughWood.evaluation.samples.every((sample) => sample.occluded)).toBe(
+      true,
+    )
   })
 
   test('hasDirectGlare matches unobstructed samples and samples ends plus interiors', () => {

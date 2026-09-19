@@ -15,6 +15,7 @@ export type DiagramModel = {
   lower: Rect
   valance: Rect
   floor: Segment
+  groove?: Rect
   led: ProfileShape
   eye: Point
   rays: RaySample[]
@@ -47,6 +48,11 @@ function profilePoints(shape: ProfileShape): Point[] {
   if (shape.kind === 'strip') return [shape.a, shape.b]
   if (shape.kind === 'square') return rectPoints(shape.rect)
   if (shape.kind === 'triangle') return [shape.a, shape.b, shape.c]
+  if (shape.kind === 'recessed') return [...shape.outline, shape.milkA, shape.milkB]
+  if (shape.kind !== 'quarterCircle') {
+    const _never: never = shape
+    return _never
+  }
   const arc = { ...shape, kind: 'arc' as const }
   return [0, 0.5, 1].map((t) => pointOnSurface(arc, t))
 }
@@ -106,6 +112,7 @@ export function buildDiagram(
     lower: scene.lower,
     valance: scene.valance,
     floor,
+    groove: scene.groove,
     led: scene.profileShape,
     eye: scene.eye,
     rays: evaluation.samples,

@@ -60,7 +60,7 @@ The system SHALL offer observer presets **стоя** (1600 mm from the floor), *
 - **AND** the distance field is unchanged
 
 ### Requirement: Side-view diagram
-The system SHALL render a side-view diagram of the wall, both shelves, the floor, the valance, the LED profile body, and the eye. In glare-ray mode the diagram SHALL also show downward fill light toward the plant zone and emit-to-eye rays. In fill mode the diagram SHALL show the direct-lit region from the engine and MUST NOT use the decorative plant fan as a substitute for that region. For `downward` the LED SHALL remain a strip with visible width. For `radius` the body SHALL be a quarter-circle. For `ell` the body SHALL be a square. For `triangle` the body SHALL be a right triangle. The LED MUST NOT be a single point marker.
+The system SHALL render a side-view diagram of the wall, both shelves, the floor, the valance, the LED profile body, and the eye. In glare-ray mode the diagram SHALL also show downward fill light toward the plant zone and emit-to-eye rays. In fill mode the diagram SHALL show the direct-lit region from the engine and MUST NOT use the decorative plant fan as a substitute for that region. For `downward` the LED SHALL remain a strip with visible width. For `radius` the body SHALL be a quarter-circle. For `ell` the body SHALL be a square. For `triangle` the body SHALL be a right triangle. For `recessed25` the upper shelf SHALL show the 35 mm groove cutout and the profile SHALL be drawn as the catalog channel section with the milky emit face, not as a valance-pocket body and not as a lone underside strip. The LED MUST NOT be a single point marker.
 
 #### Scenario: LED is not a dot
 - **GIVEN** a valid downward scene with `led.width > 0`
@@ -84,6 +84,13 @@ The system SHALL render a side-view diagram of the wall, both shelves, the floor
 - **WHEN** the diagram is shown
 - **THEN** a floor is drawn at `y = -1200`
 - **AND** the wall reaches that floor
+
+#### Scenario: Recessed channel is drawn with a cutout
+- **GIVEN** a valid `recessed25` scene
+- **WHEN** the diagram is shown
+- **THEN** the upper shelf is drawn with a groove in the underside
+- **AND** the profile is drawn as a channel section in that groove
+- **AND** the milk face is a visible segment, not a single point
 
 ### Requirement: Ray colors match geometry
 The system SHALL draw unobstructed emit-to-eye samples in red and occluded samples in green when glare-ray mode is active. The on-screen glare status MUST match the geometry engine boolean in both modes. In fill mode the system MUST NOT require emit-to-eye rays to be visible.
@@ -125,7 +132,7 @@ The system SHALL expose every numeric scene parameter as both a slider and a num
 - **AND** the diagram uses that gap
 
 ### Requirement: Mount controls match the active profile
-The system SHALL offer four mount choices: downward, radius, L-shaped, and triangle. The emit-angle control MUST NOT be shown. The wall-offset control SHALL appear only for `downward`. Profile size SHALL stay visible for every mount.
+The system SHALL offer five mount choices: downward, radius, L-shaped, triangle, and recessed 25°. The emit-angle control MUST NOT be shown. The wall-offset control SHALL appear for `downward` and for `recessed25`. Profile size SHALL stay visible for `downward`, `radius`, `ell`, and `triangle`, and MUST be hidden for `recessed25`. Profile drop SHALL stay visible except for `recessed25`, where it MUST be hidden.
 
 #### Scenario: Offset hidden on a valance-flush profile
 - **GIVEN** the user selected the triangle mount
@@ -138,8 +145,30 @@ The system SHALL offer four mount choices: downward, radius, L-shaped, and trian
 - **WHEN** the controls render
 - **THEN** the wall-offset field and slider are shown
 
+#### Scenario: Recessed hides catalog-locked fields
+- **GIVEN** the user selected the recessed 25° mount
+- **WHEN** the controls render
+- **THEN** the wall-offset field and slider are shown
+- **AND** the profile-size field and slider are hidden
+- **AND** the profile-drop field and slider are hidden
+- **AND** no emit-angle field is shown
+
+### Requirement: Recessed facing control
+The system SHALL show a facing control for `recessed25` with two values: toward the wall and toward the room. The control MUST NOT appear for `downward`, `radius`, `ell`, or `triangle`. The emit-angle control MUST NOT be shown.
+
+#### Scenario: Facing visible on recessed
+- **GIVEN** the user selected the recessed 25° mount
+- **WHEN** the controls render
+- **THEN** the facing control is shown
+- **AND** no emit-angle field is shown
+
+#### Scenario: Facing hidden on downward
+- **GIVEN** the user selected downward mount
+- **WHEN** the controls render
+- **THEN** the facing control is hidden
+
 ### Requirement: URL encodes the scene
-The system SHALL encode the full calculator state in the page URL query string so opening the same URL locally or on a host restores the same scene. Allowed mount values are `downward`, `radius`, `ell`, and `triangle`. The value `corner` SHALL be read as `triangle`. An emit-angle query parameter SHALL be ignored. The query SHALL include `lower.heightFromFloor` and the view mode. A missing height-from-floor parameter SHALL mean 1200. A missing or unknown view parameter SHALL mean glare-ray mode.
+The system SHALL encode the full calculator state in the page URL query string so opening the same URL locally or on a host restores the same scene. Allowed mount values are `downward`, `radius`, `ell`, `triangle`, and `recessed25`. The value `corner` SHALL be read as `triangle`. An emit-angle query parameter SHALL be ignored. For `recessed25` the query SHALL include facing `wall` or `room`; a missing facing parameter SHALL mean `wall`. The query SHALL include `lower.heightFromFloor` and the view mode. A missing height-from-floor parameter SHALL mean 1200. A missing or unknown view parameter SHALL mean glare-ray mode.
 
 #### Scenario: Reload keeps values
 - **GIVEN** the user set mount type `triangle` and a custom blend height
@@ -169,6 +198,17 @@ The system SHALL encode the full calculator state in the page URL query string s
 - **WHEN** the page opens
 - **THEN** `H` is 1200
 - **AND** glare-ray mode is active
+
+#### Scenario: Recessed mount and facing round-trip
+- **GIVEN** the user set mount type `recessed25` and facing toward the room
+- **WHEN** another browser opens the produced URL
+- **THEN** the mount is recessed 25°
+- **AND** facing is toward the room
+
+#### Scenario: Missing facing means wall
+- **GIVEN** a URL with `mount=recessed25` and no facing key
+- **WHEN** the page opens
+- **THEN** facing is toward the wall
 
 ### Requirement: Invalid input does not crash the view
 The system SHALL reject physically impossible values in the controls (non-positive gap, LED past the upper front edge, non-positive LED width, `H` not greater than lower-shelf thickness) and MUST keep the previous valid diagram visible with a validation message.

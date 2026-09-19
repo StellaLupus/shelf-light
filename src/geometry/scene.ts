@@ -1,11 +1,15 @@
+import { buildRecessed } from './recessed.ts'
 import type {
   BuiltScene,
   EmitSurface,
+  MountType,
   Point,
   ProfileShape,
   Rect,
   SceneInput,
 } from './types.ts'
+
+type PocketMount = Exclude<MountType, 'recessed25'>
 
 export function pocketCorner(input: SceneInput): Point {
   return {
@@ -20,14 +24,14 @@ function normalize(point: Point): Point {
   return { x: point.x / length, y: point.y / length }
 }
 
-function buildProfile(input: SceneInput): {
+function buildProfile(input: SceneInput, mount: PocketMount): {
   emitSurfaces: EmitSurface[]
   profileShape: ProfileShape
   profileBody?: Rect
 } {
   const width = input.led.width
   const y = input.gap - input.led.profileDrop
-  if (input.led.mount === 'downward') {
+  if (mount === 'downward') {
     const a = { x: input.led.offsetFromWall, y }
     const b = { x: input.led.offsetFromWall + width, y }
     return {
@@ -41,7 +45,7 @@ function buildProfile(input: SceneInput): {
   const alongValance = { x: pocket.x, y: pocket.y - width }
   const inner = { x: pocket.x - width, y: pocket.y - width }
 
-  if (input.led.mount === 'triangle') {
+  if (mount === 'triangle') {
     return {
       emitSurfaces: [
         {
@@ -55,7 +59,7 @@ function buildProfile(input: SceneInput): {
     }
   }
 
-  if (input.led.mount === 'ell') {
+  if (mount === 'ell') {
     const profileBody: Rect = {
       x: inner.x,
       y: inner.y,
@@ -82,8 +86,8 @@ function buildProfile(input: SceneInput): {
     }
   }
 
-  if (input.led.mount !== 'radius') {
-    const _never: never = input.led.mount
+  if (mount !== 'radius') {
+    const _never: never = mount
     throw new Error(`Unsupported mount: ${_never}`)
   }
 
@@ -110,7 +114,6 @@ function buildProfile(input: SceneInput): {
 }
 
 export function buildScene(input: SceneInput): BuiltScene {
-  const { emitSurfaces, profileShape, profileBody } = buildProfile(input)
   const upper: Rect = {
     x: 0,
     y: input.gap,
@@ -129,6 +132,29 @@ export function buildScene(input: SceneInput): BuiltScene {
     width: input.blend.thickness,
     height: input.blend.height,
   }
+  const floorY = -input.lower.heightFromFloor
+  const eye = { x: input.viewer.distance, y: input.viewer.eyeHeight }
+
+  if (input.led.mount === 'recessed25') {
+    const recessed = buildRecessed(input)
+    const solids = [...recessed.wood, lower, valance, ...recessed.metal]
+    return {
+      emitSurfaces: recessed.emitSurfaces,
+      profileShape: recessed.profileShape,
+      groove: recessed.groove,
+      upper,
+      lower,
+      valance,
+      occluders: solids.filter((rect) => rect.width > 0 && rect.height > 0),
+      floorY,
+      eye,
+    }
+  }
+
+  const { emitSurfaces, profileShape, profileBody } = buildProfile(
+    input,
+    input.led.mount,
+  )
   const solids = [upper, lower, valance]
   if (profileBody) solids.push(profileBody)
   return {
@@ -139,7 +165,7 @@ export function buildScene(input: SceneInput): BuiltScene {
     lower,
     valance,
     occluders: solids.filter((rect) => rect.width > 0 && rect.height > 0),
-    floorY: -input.lower.heightFromFloor,
-    eye: { x: input.viewer.distance, y: input.viewer.eyeHeight },
+    floorY,
+    eye,
   }
 }

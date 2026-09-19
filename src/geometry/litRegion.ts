@@ -9,6 +9,9 @@ export const ROOM_DEPTH_MIN = 2500
 export const ROOM_CEILING_PAD = 200
 const FAN_RAY_COUNT = 32
 const HIT_EPS = 1e-6
+const CHORD_EPS = 0.05
+const MIN_WEDGE_SPAN = 1e-4
+const MAX_WEDGE_SPLITS = 16
 
 export function roomBounds(scene: BuiltScene): RoomBounds {
   return {
@@ -103,9 +106,12 @@ function fanAngles(
   bounds: RoomBounds,
 ): number[] {
   const base = Math.atan2(normal.y, normal.x)
+  // Stay strictly inside the emit half-plane: the exact horizon has a zero
+  // front-test and used to drop the shallow wedge along a shelf underside.
+  const half = Math.PI / 2 - 1e-4
   const angles = new Set<number>()
   for (let i = 0; i <= FAN_RAY_COUNT; i += 1) {
-    angles.add(base - Math.PI / 2 + (Math.PI * i) / FAN_RAY_COUNT)
+    angles.add(base - half + (2 * half * i) / FAN_RAY_COUNT)
   }
   const targets = [
     ...occluders.flatMap(rectCorners),
@@ -121,7 +127,7 @@ function fanAngles(
     if (Math.hypot(dx, dy) < HIT_EPS) continue
     const angle = Math.atan2(dy, dx)
     const relative = wrapAngle(angle - base)
-    if (relative < -Math.PI / 2 - 1e-6 || relative > Math.PI / 2 + 1e-6) continue
+    if (relative < -half || relative > half) continue
     for (const delta of [-angleEps, 0, angleEps]) angles.add(angle + delta)
   }
   return [...angles].sort(
@@ -159,6 +165,53 @@ function triangleSkipsOccluder(
       pointStrictlyInTriangle(corner, from, a, b),
     ),
   )
+}
+
+function pointToSegmentDistance(point: Point, a: Point, b: Point): number {
+  const dx = b.x - a.x
+  const dy = b.y - a.y
+  const len2 = dx * dx + dy * dy
+  if (len2 < HIT_EPS) return Math.hypot(point.x - a.x, point.y - a.y)
+  const u = Math.min(
+    1,
+    Math.max(0, ((point.x - a.x) * dx + (point.y - a.y) * dy) / len2),
+  )
+  return Math.hypot(point.x - (a.x + u * dx), point.y - (a.y + u * dy))
+}
+
+function emitWedge(
+  from: Point,
+  angleA: number,
+  hitA: Point,
+  angleB: number,
+  hitB: Point,
+  occluders: readonly Rect[],
+  bounds: RoomBounds,
+  region: Point[][],
+  depth: number,
+): void {
+  if (Math.abs(orient(from, hitA, hitB)) < HIT_EPS) return
+  const delta = wrapAngle(angleB - angleA)
+  const span = Math.abs(delta)
+  if (span < MIN_WEDGE_SPAN || depth >= MAX_WEDGE_SPLITS) {
+    if (triangleSkipsOccluder(from, hitA, hitB, occluders)) return
+    region.push([from, hitA, hitB])
+    return
+  }
+  const mid = angleA + delta / 2
+  const hitM = firstHitOnRay(
+    from,
+    { x: Math.cos(mid), y: Math.sin(mid) },
+    occluders,
+    bounds,
+  )
+  if (hitM === null) return
+  if (pointToSegmentDistance(hitM, hitA, hitB) <= CHORD_EPS) {
+    region.push([from, hitA, hitB])
+    return
+  }
+  emitWedge(from, angleA, hitA, mid, hitM, occluders, bounds, region, depth + 1)
+  emitWedge(from, mid, hitM, angleB, hitB, occluders, bounds, region, depth + 1)
 }
 
 function pointOnSegment(point: Point, a: Point, b: Point): boolean {
@@ -204,23 +257,29 @@ export function evaluateLitRegion(scene: BuiltScene): Point[][] {
   const region: Point[][] = []
   for (const surface of scene.emitSurfaces) {
     for (const { from, normal } of sampleEmitPoints(surface)) {
-      const hits: Array<Point | null> = []
-      for (const angle of fanAngles(from, normal, scene.occluders, bounds)) {
+      const angles = fanAngles(from, normal, scene.occluders, bounds)
+      const hits = angles.map((angle) => {
         const dir = { x: Math.cos(angle), y: Math.sin(angle) }
-        const ahead = { x: from.x + dir.x, y: from.y + dir.y }
-        if (!isInFront(from, ahead, normal)) {
-          hits.push(null)
-          continue
+        if (!isInFront(from, { x: from.x + dir.x, y: from.y + dir.y }, normal)) {
+          return null
         }
-        hits.push(firstHitOnRay(from, dir, scene.occluders, bounds))
-      }
-      for (let i = 0; i < hits.length - 1; i += 1) {
-        const a = hits[i]
-        const b = hits[i + 1]
-        if (!a || !b) continue
-        if (Math.abs(orient(from, a, b)) < HIT_EPS) continue
-        if (triangleSkipsOccluder(from, a, b, scene.occluders)) continue
-        region.push([from, a, b])
+        return firstHitOnRay(from, dir, scene.occluders, bounds)
+      })
+      for (let i = 0; i < angles.length - 1; i += 1) {
+        const hitA = hits[i]
+        const hitB = hits[i + 1]
+        if (!hitA || !hitB) continue
+        emitWedge(
+          from,
+          angles[i],
+          hitA,
+          angles[i + 1],
+          hitB,
+          scene.occluders,
+          bounds,
+          region,
+          0,
+        )
       }
     }
   }
